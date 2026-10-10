@@ -6,7 +6,6 @@ one per subject, showing motor imagery cue onset and trial extraction window.
 
 import argparse
 from pathlib import Path
-from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np

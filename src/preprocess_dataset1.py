@@ -32,7 +32,7 @@ from scipy.signal import butter, sosfiltfilt
 DATASET_NAME = "BCICIV_1"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "BCICIV_1_mat"
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "processed_data" / DATASET_NAME
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "preprocessed_data" / DATASET_NAME
 
 FS = 100  # Sampling rate (Hz)
 LOWCUT = 8.0  # Bandpass low cutoff (Hz) - mu rhythm lower bound
