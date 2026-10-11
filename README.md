@@ -4,93 +4,15 @@
 
 The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction and select informative features efficiently, while maintaining high classification accuracy.
 
-## Methods
+## Proposed approach
 
-The methods cover CSP baselines, filter-bank feature selection, and three proposed CSP feature pipelines. The proposed pipelines use sparse feature selection followed by an ensemble of FLDA classifiers.
+The paper introduces three CSP-based feature extraction methods:
 
-| Method | Outline | Runner script |
-| ------ | ------- | ------------- |
-| **CSP** | Apply CSP to band-pass filtered EEG and classify the log-variance features with FLDA. | `results_csp.py` |
-| **Wavelet-CSP** | Decompose each EEG channel using db4 DWT, reconstruct motor-imagery sub-bands as channels, then extract CSP features. | `results_wavelet_csp.py` |
-| **WPD-CSP** | Use db4 wavelet packet decomposition to reconstruct motor-imagery sub-bands as channels, then extract CSP features. | `results_wpd_csp.py` |
-| **SFBCSP** | Extract CSP features from overlapping frequency sub-bands and select features with LASSO. | `results_sfbcsp.py` |
-| **SBLFB** | Extract CSP features from overlapping frequency sub-bands and select features with sparse Bayesian learning. | `results_sblfb.py` |
-| **CSP-Wavelet+LOG** | Extract wavelet statistics from CSP-filtered signals, select features with non-convex log regularization (LOG), then use ensemble FLDA. | `results_csp_wavelet_log.py` |
-| **CSP-WPD+LOG** | Extract wavelet-packet statistics from CSP-filtered signals, select features with LOG, then use ensemble FLDA. | `results_csp_wpd_log.py` |
-| **CSP-FB+LOG** | Extract filter-bank features from CSP-filtered signals, select features with LOG, then use ensemble FLDA. | `results_csp_fb_log.py` |
-| **CSP-Wavelet+LASSO** | Same CSP-Wavelet feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. | `results_csp_wavelet_lasso.py` |
-| **CSP-WPD+LASSO** | Same CSP-WPD feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. | `results_csp_wpd_lasso.py` |
-| **CSP-FB+LASSO** | Same CSP-FB feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. | `results_csp_fb_lasso.py` |
+1. **CSP-Wavelet:** apply a discrete wavelet transform to CSP-filtered signals and calculate statistics from the wavelet coefficients.
+2. **CSP-WPD:** apply wavelet packet decomposition to CSP-filtered signals and calculate statistics from the resulting coefficients.
+3. **CSP-FB:** apply a filter bank to CSP-filtered signals and extract log-variance features from the sub-bands.
 
-The result runners are in `src/results_generation/`. Each accepts `--dataset` with `1`, `2a`, `2b`, `4`, or `all`. For example, run CSP for Dataset IIa with `python src/results_generation/results_csp.py --dataset 2a`. The scripts report per-subject classification accuracy and dataset-level mean and standard deviation.
-
-## Implementation details
-
-### Source folders
-
-- `src/preprocessing/`: the four dataset preprocessing scripts.
-- `src/features/`: CSP, wavelet, wavelet-packet, and filter-bank feature pipelines.
-- `src/feature_selection/`: LASSO, LOG, and sparse Bayesian selectors.
-- `src/classifiers/`: FLDA ensemble implementation.
-- `src/data/`: loading utilities for preprocessed trials.
-- `src/results_generation/`: the 11 method-specific result scripts and their shared runner.
-- `src/visualization/`: EEG inspection and plotting.
-
-### Preprocessing
-
-Run the matching preprocessing script before generating classifier results:
-
-```powershell
-python src/preprocessing/preprocess_dataset1.py
-python src/preprocessing/preprocess_dataset2.py
-python src/preprocessing/preprocess_dataset3.py
-python src/preprocessing/preprocess_dataset4.py
-```
-
-The scripts read data from `Data/dataset_1` through `Data/dataset_4` and save compressed trial arrays under `preprocessed_data/dataset_1` through `preprocessed_data/dataset_4`. Each saved file contains train/test epochs, labels, sampling rate, and channel metadata. The common filter is a sixth-order 8–30 Hz Butterworth band-pass; epochs are cut from 0.5 to 2.5 seconds, except Dataset 1, which uses 0.5 to 3.5 seconds.
-
-| Dataset | Data used by preprocessing |
-| ------- | -------------------------- |
-| 1 | Calibration recordings; 100 train and 100 test trials per subject. |
-| 2a | 22 EEG channels; full four-class files and six two-class pairs per subject. Test labels are read from the dataset's `true_labels` files when available. |
-| 2b | The third training session; 160 trials per subject, split into 80 train and 80 test trials. |
-| 4 | Recordings are resampled from 512 Hz to 256 Hz when necessary; runs provide 100 train and 60 test trials per subject. |
-
-### Classifier pipeline
-
-- CSP learns three spatial-filter pairs from the training data and uses normalized log-variance features with FLDA.
-- Wavelet-CSP and WPD-CSP reconstruct motor-imagery sub-band signals with db4 DWT or WPD before CSP. The decomposition level is 3 for Dataset 1 and 4 for the other datasets.
-- SFBCSP and SBLFB calculate CSP features on 17 overlapping 4 Hz bands spanning 4–40 Hz. They select features using LASSO and sparse Bayesian learning, respectively.
-- CSP-Wavelet, CSP-WPD, and CSP-FB extract wavelet, packet, or filter-bank features from CSP-projected signals. Their LOG and LASSO variants apply feature selection followed by an FLDA threshold ensemble.
-- The LOG and LASSO selectors use stratified 10-fold cross-validation to choose a regularization parameter. The FLDA ensemble evaluates coefficient thresholds from 0.0 to 0.8 in increments of 0.1.
-
-### Running one method
-
-For example, run each method on all four datasets or select a single dataset:
-
-```powershell
-python src/results_generation/results_csp.py --dataset all
-python src/results_generation/results_csp_wavelet_log.py --dataset 2a
-```
-
-Each runner writes per-subject accuracies to `results/<method>/dataset_<dataset>/accuracies.csv` and mean/std summaries to `summary.csv`. Dataset 2a produces one row per subject and binary class pair. A short run can be limited with `--subject-limit N`.
-
-Generate EEG inspection plots with `python src/visualization/visualize_eeg.py --dataset all`.
-
-## Results currently in the repository
-
-The separate CSP runner has saved results for all four datasets. Accuracy is shown as mean ± standard deviation in percent across subjects (Dataset 2a counts each subject-pair result as one row).
-
-| Dataset | Result rows | CSP accuracy (%) |
-| ------- | ----------: | ---------------: |
-| 1 | 7 | 84.00 ± 11.69 |
-| 2a | 54 | 81.58 ± 13.19 |
-| 2b | 9 | 79.31 ± 16.01 |
-| 4 | 14 | 51.43 ± 4.83 |
-
-An earlier combined-runner snapshot for Dataset 1 is also stored at `results/paper_reproduction/dataset_1/paper_table.csv`. The LASSO variants do not have saved results yet; run their individual scripts to generate them. These numbers are project outputs, not values copied from the paper.
-
-**Evaluation caveat:** the current LOG/LASSO ensemble score is the best accuracy among the threshold models evaluated on the test labels. This uses the test set to choose the threshold and can make those ensemble results optimistic. Use a validation split to select the threshold before treating them as unbiased test accuracy.
+The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second stage of feature selection and classification.
 
 ## Evaluation
 
@@ -100,10 +22,10 @@ The proposed methods are evaluated on four public motor imagery EEG datasets. Th
 
 | Dataset                        | Description in the paper                                                                                                                                                                                                     |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BCI Competition IV Dataset I   | 59 channels at 100 Hz. Seven subjects each imagine two of three movements: left hand, right hand, or right foot. Two runs of 100 trials are used, one for training and one for testing. |
-| BCI Competition IV Dataset IIa | 22 channels at 250 Hz. Nine subjects imagine left hand, right hand, foot, or tongue movement. The first session is used for training and the second for testing. The four classes produce six binary pairs per subject (54 subject-task sets total). |
-| BCI Competition IV Dataset IIb | 3 channels at 250 Hz. Nine subjects imagine left-hand or right-hand movement. The paper uses the third training session, containing 160 trials split evenly between training and testing. |
-| David Steyrl dataset (2016)    | 15 channels recorded at 512 Hz and downsampled to 256 Hz. Fourteen subjects imagine right-hand or foot movement. Runs 1–5 provide 100 training trials; runs 6–8 provide 60 test trials per subject. |
+| BCI Competition IV Dataset I   | 59 channels at 100 Hz; 7 subjects imagine two of three movements (left hand, right hand, or right foot). The paper uses two runs of 100 trials each, with one run for training and the other for testing.                    |
+| BCI Competition IV Dataset IIa | 22 channels at 250 Hz; 9 subjects imagine left hand, right hand, foot, or tongue movement. The two sessions are used for training and testing, and the four classes form six binary task pairs (54 subject/task sets total). |
+| BCI Competition IV Dataset IIb | 3 channels at 250 Hz; 9 subjects perform left-hand or right-hand motor imagery. The paper uses the third training session, with 160 trials split evenly between training and testing.                                        |
+| David Steyrl dataset (2016)    | 15 channels recorded at 512 Hz and downsampled to 256 Hz; 14 subjects imagine right-hand or foot movement. Runs 1–5 provide 100 training trials, and runs 6–8 provide 60 test trials per subject.                            |
 
 ## Reference
 

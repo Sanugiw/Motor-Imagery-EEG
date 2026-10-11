@@ -1,1 +1,0 @@
-"""Sparse feature-selection methods."""
