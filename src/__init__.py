@@ -5,9 +5,9 @@ Based on:
 for Motor Imagery EEG Classification', Zhang et al., Sensors 2020.
 """
 
-from .dataset import load_bci_comp4_dataset_2b
+from .dataset3 import load_bci_comp4_dataset_2b
 from .segmentation import extract_trials_from_continuous, slice_trial_window
-from .preprocessing import (
+from .preprocess_dataset3 import (
     apply_butter_bandpass,
     design_butter_bandpass,
     remove_baseline,
