@@ -1,4 +1,4 @@
-"""Generate raw-versus-filtered EEG inspection plots for both datasets."""
+"""Generate raw-versus-filtered EEG inspection plots for all four datasets."""
 
 import argparse
 import warnings
@@ -25,13 +25,11 @@ np.fromstring = _compat_fromstring
 
 import mne
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA_DIR_DS1 = (
-    PROJECT_ROOT / "Data" / "BCICIV_1"
-    if (PROJECT_ROOT / "Data" / "BCICIV_1").exists()
-    else PROJECT_ROOT / "Data" / "BCICIV_1_mat"
-)
-DEFAULT_DATA_DIR_DS2 = PROJECT_ROOT / "Data" / "BCICIV_2a"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DEFAULT_DATA_DIR_DS1 = PROJECT_ROOT / "Data" / "dataset_1"
+DEFAULT_DATA_DIR_DS2 = PROJECT_ROOT / "Data" / "dataset_2"
+DEFAULT_PREPROCESSED_DIR_DS3 = PROJECT_ROOT / "preprocessed_data" / "dataset_3"
+DEFAULT_PREPROCESSED_DIR_DS4 = PROJECT_ROOT / "preprocessed_data" / "dataset_4"
 DEFAULT_PLOT_DIR = PROJECT_ROOT / "plots"
 
 LOWCUT = 8.0
@@ -245,18 +243,78 @@ def plot_dataset2_subject(
     )
 
 
+def plot_preprocessed_epoch(
+    npz_path: Path,
+    output_dir: Path,
+    trial_index: int = 0,
+    channel_name: str = "C3",
+) -> Path:
+    """Plot a saved raw and filtered epoch from Dataset 3 or Dataset 4."""
+    if trial_index < 0:
+        raise ValueError("Trial index must be zero or greater.")
+    with np.load(npz_path, allow_pickle=True) as data:
+        raw_trials = data["X_train_raw"]
+        filtered_key = "X_train" if "X_train" in data else "X_train_filt"
+        filtered_trials = data[filtered_key]
+        labels = data["y_train"]
+        subject_key = "subject_id" if "subject_id" in data else "subject"
+        fs_key = "sample_rate" if "sample_rate" in data else "fs"
+        subject = str(data[subject_key].item())
+        fs = float(data[fs_key].item())
+        name_key = "channel_names" if "channel_names" in data else "channels"
+        channel_names = [str(name) for name in data[name_key]] if name_key in data else []
+        if trial_index >= len(raw_trials):
+            raise IndexError(
+                f"Trial index {trial_index} is outside 0..{len(raw_trials) - 1} for {subject}."
+            )
+        raw_epoch = np.asarray(raw_trials[trial_index])
+        filtered_epoch = np.asarray(filtered_trials[trial_index])
+        label = int(labels[trial_index])
+
+    if raw_epoch.shape != filtered_epoch.shape:
+        raise ValueError(f"Raw and filtered epoch shapes differ in {npz_path.name}.")
+    if channel_names and len(channel_names) == raw_epoch.shape[0]:
+        channel_index, selected_channel = _select_channel(channel_names, channel_name)
+    else:
+        channel_index, selected_channel = 0, "channel 1"
+    time_sec = EPOCH_START + np.arange(raw_epoch.shape[-1]) / fs
+    epoch_end = EPOCH_START + raw_epoch.shape[-1] / fs
+
+    fig, axes = plt.subplots(2, 1, figsize=(13, 6.5), sharex=True)
+    axes[0].plot(time_sec, raw_epoch[channel_index], color="#1f77b4", linewidth=1.1)
+    axes[1].plot(time_sec, filtered_epoch[channel_index], color="#2ca02c", linewidth=1.1)
+    for axis in axes:
+        axis.axvspan(EPOCH_START, epoch_end, color="#ff7f0e", alpha=0.12)
+        axis.set_ylabel("Amplitude (uV)", fontsize=11)
+        axis.grid(True, alpha=0.3)
+    axes[0].set_title(
+        f"Subject {subject} - Raw EEG ({selected_channel}, trial {trial_index + 1}, class {label})"
+    )
+    axes[1].set_title(f"Subject {subject} - Preprocessed EEG ({LOWCUT:g}-{HIGHCUT:g} Hz)")
+    axes[1].set_xlabel("Time relative to cue onset (seconds)", fontsize=11)
+    fig.tight_layout()
+    output_path = output_dir / f"subject_{subject}_raw_vs_preprocessed.png"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved inspection plot: {output_path}")
+    return output_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate raw-versus-filtered EEG plots for Dataset 1 and Dataset 2a."
+        description="Generate raw-versus-filtered EEG plots for all four datasets."
     )
     parser.add_argument(
         "--dataset",
-        choices=["1", "2a", "all"],
+        choices=["1", "2a", "2b", "3", "4", "all"],
         default="all",
-        help="Dataset to plot: 1, 2a, or all (default: all).",
+        help="Dataset to plot: 1, 2a, 2b (or 3), 4, or all (default: all).",
     )
     parser.add_argument("--data-dir-ds1", type=Path, default=DEFAULT_DATA_DIR_DS1)
     parser.add_argument("--data-dir-ds2", type=Path, default=DEFAULT_DATA_DIR_DS2)
+    parser.add_argument("--preprocessed-dir-ds3", type=Path, default=DEFAULT_PREPROCESSED_DIR_DS3)
+    parser.add_argument("--preprocessed-dir-ds4", type=Path, default=DEFAULT_PREPROCESSED_DIR_DS4)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_PLOT_DIR,
                         help="Base directory for plots (dataset-specific folders are created).")
     parser.add_argument("--channel", default="C3", help="Electrode to plot (default: C3).")
@@ -269,7 +327,7 @@ def main() -> None:
         files = sorted(args.data_dir_ds1.glob("BCICIV_calib_ds1*.mat"))
         if not files:
             raise FileNotFoundError(f"No Dataset 1 calibration files found in {args.data_dir_ds1.resolve()}.")
-        out_dir = args.output_dir / "BCICIV_1"
+        out_dir = args.output_dir / "dataset_1"
         print(f"Generating Dataset 1 inspection plots for {len(files)} subjects...")
         for mat_path in files:
             plot_dataset1_subject(
@@ -285,7 +343,7 @@ def main() -> None:
         subjects = [f"A0{i}" for i in range(1, 10)]
         if not any((args.data_dir_ds2 / f"{subject}T.gdf").exists() for subject in subjects):
             raise FileNotFoundError(f"No Dataset 2a training GDF files found in {args.data_dir_ds2.resolve()}.")
-        out_dir = args.output_dir / "BCICIV_2a"
+        out_dir = args.output_dir / "dataset_2"
         print(f"Generating Dataset 2a inspection plots for {len(subjects)} subjects...")
         for subject in subjects:
             plot_dataset2_subject(
@@ -297,6 +355,30 @@ def main() -> None:
                 args.pre_cue_sec,
                 args.post_cue_sec,
             )
+
+    if args.dataset in ["2b", "3", "all"]:
+        files = sorted(args.preprocessed_dir_ds3.glob("B*_preprocessed.npz"))
+        if not files:
+            raise FileNotFoundError(
+                f"No preprocessed Dataset 3 files found in {args.preprocessed_dir_ds3.resolve()}. "
+                "Run src.preprocessing.preprocess_dataset3 first."
+            )
+        out_dir = args.output_dir / "dataset_3"
+        print(f"Generating Dataset 3 inspection plots for {len(files)} subjects...")
+        for npz_path in files:
+            plot_preprocessed_epoch(npz_path, out_dir, args.trial, args.channel)
+
+    if args.dataset in ["4", "all"]:
+        files = sorted(args.preprocessed_dir_ds4.glob("S*_preprocessed.npz"))
+        if not files:
+            raise FileNotFoundError(
+                f"No preprocessed Dataset 4 files found in {args.preprocessed_dir_ds4.resolve()}. "
+                "Run src.preprocessing.preprocess_dataset4 first."
+            )
+        out_dir = args.output_dir / "dataset_4"
+        print(f"Generating Dataset 4 inspection plots for {len(files)} subjects...")
+        for npz_path in files:
+            plot_preprocessed_epoch(npz_path, out_dir, args.trial, args.channel)
 
     print(f"\nAll requested plots saved under: {args.output_dir.resolve()}")
 
