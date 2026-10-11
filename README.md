@@ -1,93 +1,32 @@
-# Motor Imagery / Movement BCI Preprocessing Pipeline
+# Paper Outline
 
-Implementation of the segmentation and preprocessing methodology described in:
-> **"The CSP-Based New Features Plus Non-Convex Log Sparse Feature Selection for Motor Imagery EEG Classification"**  
-> Shaorong Zhang, Zhibin Zhu, Benxin Zhang, Bao Feng, Tianyou Yu, Zhi Li. *Sensors*, 2020, 20, 4749.
+## Goal
 
-This first phase implements the dataset loading, single-trial segmentation, and preprocessing in Python for **BCI Competition IV Dataset 3** (`S1.mat` and `S2.mat`).
+The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction and select informative features efficiently, while maintaining high classification accuracy.
 
----
+## Proposed approach
 
-## 1. Dataset Overview (BCI Competition IV - Dataset 3)
+The paper introduces three CSP-based feature extraction methods:
 
-The dataset contains directionally modulated activity recorded across 10 sensor channels located over motor areas at a sampling rate of **400 Hz**:
-- **Subjects**: `S1` and `S2`.
-- **4 Classes**: `1 - right`, `2 - forward`, `3 - left`, `4 - backward` (40 trials/class = 160 training trials per subject).
-- **Test Data**: 74 trials for S1, 73 trials for S2.
-- **Trial Recording**: 400 samples from $-0.4\text{ s}$ to $+0.59\text{ s}$ relative to movement onset ($t = 0\text{ s}$).
+1. **CSP-Wavelet:** apply a discrete wavelet transform to CSP-filtered signals and calculate statistics from the wavelet coefficients.
+2. **CSP-WPD:** apply wavelet packet decomposition to CSP-filtered signals and calculate statistics from the resulting coefficients.
+3. **CSP-FB:** apply a filter bank to CSP-filtered signals and extract log-variance features from the sub-bands.
 
----
+The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second stage of feature selection and classification.
 
-## 2. Methodology & Paper Mapping
+## Evaluation
 
-### A. Trial Segmentation (Section 2.3 & 2.4)
-Single trials are segmented relative to task onset ($t = 0\text{ s}$):
-- **Full Trial Window**: $[-0.4\text{ s}, +0.59\text{ s}]$ (400 samples) capturing both motor preparation and execution.
-- **Post-Onset Motor Task Window**: $[0.0\text{ s}, +0.59\text{ s}]$ (238 samples) focusing strictly on the movement phase, matching the paper's principle of single trial motor task extraction starting from $t = 0\text{ s}$.
+The proposed methods are evaluated on four public motor imagery EEG datasets. The experiments compare classification accuracy and feature extraction time against other methods. The paper reports CSP-FB + LOG as a strong option when considering both accuracy and computation time.
 
-### B. Preprocessing & Filtering (Section 2.3 & 2.4.2)
-1. **Baseline Removal / Demeaning**: Removes DC bias per trial and channel.
-2. **6th-Order Butterworth Bandpass Filter (8–30 Hz)**:
-   - Target band: Mu (8–12 Hz) and Beta (18–26 Hz) sensorimotor rhythms.
-   - Numerically stable zero-phase bidirectional filtering via Second-Order Sections (`sosfiltfilt`).
-3. **Filter Bank Sub-Band Generation (for CSP-FB)**:
-   - 10 sub-bands with 4 Hz bandwidth and 2 Hz overlap across 8–30 Hz:  
-     $[8-12, 10-14, 12-16, 14-18, 16-20, 18-22, 20-24, 22-26, 24-28, 26-30]\text{ Hz}$.
+## Datasets
 
----
+| Dataset                        | Description in the paper                                                                                                                                                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BCI Competition IV Dataset I   | 59 channels at 100 Hz; 7 subjects imagine two of three movements (left hand, right hand, or right foot). The paper uses two runs of 100 trials each, with one run for training and the other for testing.                    |
+| BCI Competition IV Dataset IIa | 22 channels at 250 Hz; 9 subjects imagine left hand, right hand, foot, or tongue movement. The two sessions are used for training and testing, and the four classes form six binary task pairs (54 subject/task sets total). |
+| BCI Competition IV Dataset IIb | 3 channels at 250 Hz; 9 subjects perform left-hand or right-hand motor imagery. The paper uses the third training session, with 160 trials split evenly between training and testing.                                        |
+| David Steyrl dataset (2016)    | 15 channels recorded at 512 Hz and downsampled to 256 Hz; 14 subjects imagine right-hand or foot movement. Runs 1–5 provide 100 training trials, and runs 6–8 provide 60 test trials per subject.                            |
 
-## 3. Directory Layout
+## Reference
 
-```text
-Motor-Imagery-EEG/
-├── data/
-│   ├── S1.mat                        # Subject 1 dataset
-│   ├── S2.mat                        # Subject 2 dataset
-│   └── SensorPos.pdf                 # Sensor layout
-├── preprocessed_data/
-│   ├── S1_preprocessed.npz           # Preprocessed arrays for Subject 1
-│   └── S2_preprocessed.npz           # Preprocessed arrays for Subject 2
-├── results/figures/
-│   ├── butterworth_6th_order_freq_response.png
-│   ├── S1_class_averages.png
-│   ├── S1_psd_comparison.png
-│   ├── S1_raw_vs_filtered_trial0_ch0.png
-│   ├── S2_class_averages.png
-│   ├── S2_psd_comparison.png
-│   └── S2_raw_vs_filtered_trial0_ch0.png
-├── src/
-│   ├── __init__.py
-│   ├── dataset.py                    # Data loader and binary pair extractor
-│   ├── segmentation.py               # Flexible time-window segmentation
-│   ├── preprocessing.py              # Butterworth filtering & filter banks
-│   └── visualize.py                  # Verification and analysis plots
-├── run_preprocessing.py              # Master script to execute full pipeline
-└── README.md
-```
-
----
-
-## 4. Usage
-
-To run the pipeline from the workspace root:
-
-```bash
-python run_preprocessing.py
-```
-
-### Loading Preprocessed Data in Python:
-
-```python
-import numpy as np
-
-data = np.load('preprocessed_data/S1_preprocessed.npz')
-
-# Access segmented and preprocessed arrays:
-X_train = data['X_train_full_filt']   # Shape: (160 trials, 10 channels, 400 samples)
-y_train = data['y_train']             # Shape: (160,) labels: 1, 2, 3, 4
-X_test  = data['X_test_full_filt']    # Shape: (74 trials, 10 channels, 400 samples)
-time    = data['time_full']           # Shape: (400,) [-0.4s to 0.59s]
-
-# Or post-onset window (t >= 0):
-X_train_post = data['X_train_post_filt'] # Shape: (160, 10, 238)
-```
+Zhang, S., Zhu, Z., Zhang, B., Feng, B., Yu, T., & Li, Z. (2020). _The CSP-Based New Features Plus Non-Convex Log Sparse Feature Selection for Motor Imagery EEG Classification_. Sensors, 20(17), 4749. [https://doi.org/10.3390/s20174749](https://doi.org/10.3390/s20174749)
