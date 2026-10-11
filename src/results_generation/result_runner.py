@@ -1,6 +1,5 @@
 """Shared execution and output helpers for the per-method result scripts."""
 
-import argparse
 import csv
 from pathlib import Path
 import sys
@@ -165,16 +164,3 @@ def run_method(method, dataset, output_dir=None, preprocessed_dir=None, subject_
     return rows, summary[0]
 
 
-def main(method):
-    parser = argparse.ArgumentParser(description=f"Generate {method} classification accuracy results.")
-    parser.add_argument("--dataset", choices=(*DATASETS, "all"), default="all")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "results")
-    parser.add_argument("--preprocessed-dir", type=Path,
-                        help="Override the preprocessed-data directory for the selected dataset.")
-    parser.add_argument("--subject-limit", type=int,
-                        help="Run only the first N subjects for a short trial run.")
-    args = parser.parse_args()
-    chosen = DATASETS if args.dataset == "all" else (args.dataset,)
-    for dataset in chosen:
-        run_method(method, dataset, args.output_dir,
-                   args.preprocessed_dir, args.subject_limit)

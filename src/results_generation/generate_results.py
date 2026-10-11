@@ -1,4 +1,4 @@
-"""Generate classification results for every method and selected dataset."""
+"""Generate classification results for every method or a selected method."""
 
 import argparse
 import csv
@@ -12,6 +12,8 @@ else:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--method", choices=("all", *METHODS), default="all",
+                        help="Method to run (default: all methods).")
     parser.add_argument("--dataset", choices=(*DATASETS, "all"), default="all")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "results")
     parser.add_argument(
@@ -27,11 +29,12 @@ def main():
     args = parser.parse_args()
 
     datasets = DATASETS if args.dataset == "all" else (args.dataset,)
+    methods = tuple(METHODS) if args.method == "all" else (args.method,)
     summaries = []
-    total = len(METHODS) * len(datasets)
+    total = len(methods) * len(datasets)
     completed = 0
     for dataset in datasets:
-        for method in METHODS:
+        for method in methods:
             completed += 1
             print(f"\n[{completed}/{total}] Running {method} on Dataset {dataset}", flush=True)
             _, summary = run_method(
@@ -43,20 +46,21 @@ def main():
             )
             summaries.append(summary)
 
-    summary_path = args.output_dir / "all_methods_summary.csv"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    columns = [
-        "method",
-        "dataset",
-        "n_subjects",
-        "mean_accuracy_percent",
-        "std_accuracy_percent",
-    ]
-    with summary_path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns)
-        writer.writeheader()
-        writer.writerows(summaries)
-    print(f"\nSaved combined summary: {summary_path.resolve()}")
+    if args.method == "all":
+        summary_path = args.output_dir / "all_methods_summary.csv"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        columns = [
+            "method",
+            "dataset",
+            "n_subjects",
+            "mean_accuracy_percent",
+            "std_accuracy_percent",
+        ]
+        with summary_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(summaries)
+        print(f"\nSaved combined summary: {summary_path.resolve()}")
 
 
 if __name__ == "__main__":
