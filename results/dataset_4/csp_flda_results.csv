@@ -1,0 +1,15 @@
+file,subject,session,pair,classes,train_acc,test_acc,n_train,n_test,W_shape
+S01_preprocessed.npz,S01,,,right hand vs. feet,0.84,0.5166666666666667,100,60,15x6
+S02_preprocessed.npz,S02,,,right hand vs. feet,0.78,0.4,100,60,15x6
+S03_preprocessed.npz,S03,,,right hand vs. feet,0.82,0.4166666666666667,100,60,15x6
+S04_preprocessed.npz,S04,,,right hand vs. feet,0.86,0.5,100,60,15x6
+S05_preprocessed.npz,S05,,,right hand vs. feet,0.81,0.5166666666666667,100,60,15x6
+S06_preprocessed.npz,S06,,,right hand vs. feet,0.72,0.5333333333333333,100,60,15x6
+S07_preprocessed.npz,S07,,,right hand vs. feet,0.74,0.55,100,60,15x6
+S08_preprocessed.npz,S08,,,right hand vs. feet,0.78,0.5333333333333333,100,60,15x6
+S09_preprocessed.npz,S09,,,right hand vs. feet,0.7,0.48333333333333334,100,60,15x6
+S10_preprocessed.npz,S10,,,right hand vs. feet,0.77,0.5666666666666667,100,60,15x6
+S11_preprocessed.npz,S11,,,right hand vs. feet,0.73,0.48333333333333334,100,60,15x6
+S12_preprocessed.npz,S12,,,right hand vs. feet,0.72,0.5166666666666667,100,60,15x6
+S13_preprocessed.npz,S13,,,right hand vs. feet,0.76,0.5,100,60,15x6
+S14_preprocessed.npz,S14,,,right hand vs. feet,0.63,0.5,100,60,15x6

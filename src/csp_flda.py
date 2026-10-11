@@ -6,6 +6,9 @@ Paper: "The CSP-Based New Features Plus Non-Convex Log Sparse Feature Selection
 Supports:
 - Dataset 1: BCI Competition IV Dataset 1 (7 subjects, binary motor imagery)
 - Dataset 2: BCI Competition IV Dataset 2a (9 subjects, 6 binary pairs: LR, LF, LT, RF, RT, FT = 54 subsets)
+- Dataset 3: BCI Competition IV Dataset 2b (9 subjects, 3 channels C3/Cz/C4, left vs. right hand).
+             The paper uses session 3 only (B0103T ... B0903T); the other sessions are optional.
+- Dataset 4: Steyrl et al. (2016), 14 subjects, 15 channels, right hand vs. feet.
 
 CSP Transformation:
 - Normalized sample covariance matrices:
@@ -14,20 +17,28 @@ CSP Transformation:
     C_bar_2^{-1} C_bar_1 w = lambda w                                                                 (Eq. 3)
 - Spatial filter matrix W:
     Eigenvectors sorted by descending eigenvalues, taking the first m and last m columns (m = 3).
+    If 2m exceeds the number of channels (Dataset 3 has only 3 channels), the first-m and
+    last-m selections overlap; every spatial filter is then used exactly once (see note below).
 - Spatial projection:
     Z = W^T D                                                                                         (Eq. 4)
 - Traditional CSP feature extraction (normalized log-variance):
     f_p = log( var(Z_p) / sum_{i=1}^{2m} var(Z_i) ),  p = 1, 2, ..., 2m                              (Eq. 5)
 
 Classification:
-- Fisher Linear Discriminant Analysis (FLDA) classifier trained on Run 1 (Training set)
-  and evaluated on Run 2 (Testing set).
+- Fisher Linear Discriminant Analysis (FLDA) classifier trained on the training set
+  and evaluated on the test set.
+
+Note on Dataset 3 (3 channels, m = 3): taking "the first 3 and the last 3 columns" of a
+3-column matrix selects every column twice. Duplicated features add no information (FLDA
+on duplicated columns is equivalent to FLDA on the unique ones) and the doubled denominator
+in Eq. 5 only shifts every feature by the same constant (-log 2). We therefore use the
+3 distinct filters once each.
 """
 
 import argparse
 import csv
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.linalg as la
@@ -45,6 +56,20 @@ else:
 DEFAULT_M = 3  # m = 3 pairs of spatial filters (total 2m = 6 filters)
 DEFAULT_RESULTS_DIR = PROJECT_ROOT / "results"
 
+# CSP + FLDA test accuracies (%) reported in the paper (Table 4 / Table 5, "CSP" column).
+# Printed next to our results as a sanity check; small deviations are expected.
+PAPER_CSP_DS3 = {
+    "B01": 77.50, "B02": 60.00, "B03": 46.25, "B04": 98.75, "B05": 88.75,
+    "B06": 81.25, "B07": 81.25, "B08": 93.75, "B09": 81.25,
+}
+PAPER_CSP_DS4 = {
+    "S01": 56.67, "S02": 85.00, "S03": 100.00, "S04": 85.00, "S05": 60.00,
+    "S06": 66.67, "S07": 90.00, "S08": 81.67, "S09": 98.33, "S10": 53.33,
+    "S11": 76.67, "S12": 81.67, "S13": 60.00, "S14": 51.67,
+}
+PAPER_CSP_DS3_MEAN_STD = (78.75, 15.47)
+PAPER_CSP_DS4_MEAN_STD = (74.76, 15.93)
+
 
 # ---------------- CSP Transformation Class ----------------
 
@@ -56,7 +81,8 @@ class CommonSpatialPattern:
     ----------
     n_components : int, default=3
         The parameter 'm' from the paper. The final spatial filter W contains
-        the first m and last m columns (total 2*m filters).
+        the first m and last m columns (total 2*m filters). If 2*m exceeds the
+        number of channels, all channels' filters are used once (see module docstring).
     reg : float, default=1e-5
         Small diagonal shrinkage/regularization parameter to prevent numerical
         singularity during matrix inversion.
@@ -65,7 +91,7 @@ class CommonSpatialPattern:
     def __init__(self, n_components: int = 3, reg: float = 1e-5):
         self.m = n_components
         self.reg = reg
-        self.W: Optional[np.ndarray] = None  # Spatial filter matrix of shape (C, 2*m)
+        self.W: Optional[np.ndarray] = None  # Spatial filter matrix of shape (C, n_filters)
         self.eigenvalues: Optional[np.ndarray] = None
         self.classes_: Optional[np.ndarray] = None
 
@@ -123,11 +149,12 @@ class CommonSpatialPattern:
         # 4. Form final spatial filter W from first m and last m columns
         m = self.m
         if 2 * m > n_channels:
-            raise ValueError(f"2 * m ({2 * m}) cannot exceed number of channels ({n_channels}).")
-
-        W_first_m = eigvecs[:, :m]
-        W_last_m = eigvecs[:, -m:]
-        self.W = np.concatenate([W_first_m, W_last_m], axis=1)  # Shape: (C, 2*m)
+            # e.g. Dataset 3 (3 channels, m = 3): first-m and last-m overlap -> use each filter once
+            self.W = eigvecs.copy()  # Shape: (C, C)
+        else:
+            W_first_m = eigvecs[:, :m]
+            W_last_m = eigvecs[:, -m:]
+            self.W = np.concatenate([W_first_m, W_last_m], axis=1)  # Shape: (C, 2*m)
 
         return self
 
@@ -198,6 +225,7 @@ def evaluate_single_npz(
     subject = str(data["subject"]) if "subject" in data else npz_path.stem.split("_")[0]
     classes = [str(c) for c in data["classes"]] if "classes" in data else ["Class 1", "Class 2"]
     pair_label = str(data["pair"]) if "pair" in data else ""
+    session = str(data["session"]) if "session" in data else ""  # Dataset 3 only
 
     csp = CommonSpatialPattern(n_components=m, reg=reg)
     csp.fit(X_train, y_train)
@@ -233,6 +261,7 @@ def evaluate_single_npz(
     return {
         "file": npz_path.name,
         "subject": subject,
+        "session": session,
         "pair": pair_label,
         "classes": classes,
         "train_acc": train_acc,
@@ -247,7 +276,7 @@ def save_results_csv(results: List[Dict], output_path: Path) -> None:
     """Save per-file CSP + FLDA metrics as a CSV results table."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
-        "file", "subject", "pair", "classes", "train_acc", "test_acc",
+        "file", "subject", "session", "pair", "classes", "train_acc", "test_acc",
         "n_train", "n_test", "W_shape",
     ]
     with output_path.open("w", newline="", encoding="utf-8") as csv_file:
@@ -258,6 +287,13 @@ def save_results_csv(results: List[Dict], output_path: Path) -> None:
             row["classes"] = " vs. ".join(row["classes"])
             row["W_shape"] = "x".join(str(size) for size in row["W_shape"])
             writer.writerow(row)
+
+
+def _print_mean_std(label: str, values: np.ndarray, paper: Optional[Sequence[float]] = None) -> None:
+    line = f"{label}: {np.mean(values):.2f}% +/- {np.std(values):.2f}%"
+    if paper is not None:
+        line += f"   (paper, CSP column: {paper[0]:.2f}% +/- {paper[1]:.2f}%)"
+    print(line)
 
 
 def evaluate_dataset1(
@@ -365,46 +401,180 @@ def evaluate_dataset2(
     return results
 
 
+def evaluate_dataset3(
+    data_dir: Path,
+    output_dir: Path,
+    m: int = 3,
+    reg: float = 1e-5,
+    summary_path: Optional[Path] = None,
+    sessions: Sequence[int] = (3,),
+):
+    """Run CSP + FLDA on Dataset 3 (BCI IV 2b; 9 subjects, 3 channels, left vs. right hand).
+
+    sessions: which session files to evaluate. The paper uses session 3 only
+    (B0103T ... B0903T); pass e.g. (1, 2, 3, 4, 5) for every preprocessed file.
+    """
+    npz_files = sorted(data_dir.glob("B0?0?[TE]_preprocessed.npz"))
+    if sessions:
+        npz_files = [f for f in npz_files if int(f.stem[3:5]) in set(sessions)]
+    if not npz_files:
+        raise FileNotFoundError(
+            f"No Dataset 3 files for session(s) {list(sessions) or 'any'} found in {data_dir.resolve()}."
+        )
+
+    print(f"\n{'=' * 75}")
+    print(f"EVALUATING DATASET 3: BCI Competition IV Dataset 2b (CSP m={m}, FLDA)")
+    print(f"Sessions: {sorted({int(f.stem[3:5]) for f in npz_files})}  ({len(npz_files)} files)")
+    print("Note: only 3 channels -> all 3 spatial filters are used once (2m = 6 > 3 channels).")
+    print(f"{'=' * 75}")
+
+    results, failed = [], []
+    for f in npz_files:
+        try:
+            res = evaluate_single_npz(f, m=m, reg=reg, save_features=True, output_dir=output_dir)
+        except Exception as exc:  # keep going with the remaining files
+            failed.append((f.name, repr(exc)))
+            print(f"{f.stem.replace('_preprocessed', ''):<8} | FAILED: {exc!r}")
+            continue
+        results.append(res)
+
+    # Table: subjects x sessions (test accuracy, %)
+    sess_present = sorted({int(r["session"]) for r in results})
+    subjects = sorted({r["subject"] for r in results})
+    lookup = {(r["subject"], int(r["session"])): r for r in results}
+    header = f"{'Subject':<8}" + "".join(f"{'Sess ' + str(s):>10}" for s in sess_present)
+    print("\nTest accuracy (%) per subject and session")
+    print(header)
+    print("-" * len(header))
+    for sub in subjects:
+        cells = []
+        for s in sess_present:
+            r = lookup.get((sub, s))
+            cells.append(f"{r['test_acc'] * 100:>10.2f}" if r else f"{'-':>10}")
+        print(f"{sub:<8}" + "".join(cells))
+    print("-" * len(header))
+    for s in sess_present:
+        accs = np.asarray([r["test_acc"] for r in results if int(r["session"]) == s]) * 100
+        print(f"Session {s}: test mean {np.mean(accs):.2f}% +/- {np.std(accs):.2f}% (n={len(accs)})")
+
+    # Paper protocol: session 3 (80 train / 80 test), compared with the paper's CSP column
+    if 3 in sess_present:
+        r3 = sorted([r for r in results if int(r["session"]) == 3], key=lambda r: r["subject"])
+        print(f"\n{'Subject':<8} {'Train':>8} {'Test':>8} {'Paper CSP':>10} {'Diff':>8}   (session 3 = paper protocol)")
+        print("-" * 52)
+        for r in r3:
+            paper = PAPER_CSP_DS3.get(r["subject"])
+            test = r["test_acc"] * 100
+            ref = f"{paper:>10.2f}" if paper is not None else f"{'-':>10}"
+            diff = f"{test - paper:>+8.2f}" if paper is not None else f"{'-':>8}"
+            print(f"{r['subject']:<8} {r['train_acc'] * 100:>7.2f}% {test:>7.2f}% {ref} {diff}")
+        print("-" * 52)
+        print("DATASET 3 SUMMARY, session 3 (mean +/- population standard deviation)")
+        _print_mean_std("Train accuracy", np.asarray([r["train_acc"] for r in r3]) * 100)
+        _print_mean_std("Test accuracy ", np.asarray([r["test_acc"] for r in r3]) * 100, PAPER_CSP_DS3_MEAN_STD)
+    print("=" * 75)
+    for name, err in failed:
+        print(f"Failed: {name}: {err}")
+    if summary_path is not None:
+        save_results_csv(results, summary_path)
+        print(f"Per-file results saved to: {summary_path.resolve()}")
+    return results
+
+
+def evaluate_dataset4(
+    data_dir: Path,
+    output_dir: Path,
+    m: int = 3,
+    reg: float = 1e-5,
+    summary_path: Optional[Path] = None,
+):
+    """Run CSP + FLDA on Dataset 4 (Steyrl et al.; 14 subjects, 15 channels, right hand vs. feet)."""
+    npz_files = sorted(data_dir.glob("S??_preprocessed.npz"))
+    if not npz_files:
+        raise FileNotFoundError(f"No Dataset 4 files found in {data_dir.resolve()}.")
+
+    print(f"\n{'=' * 75}")
+    print(f"EVALUATING DATASET 4: Steyrl et al. 2016, right hand vs. feet (CSP m={m}, FLDA)")
+    print(f"{'=' * 75}")
+    print(f"{'Subject':<8} {'Tasks':<20} {'Train':>8} {'Test':>8} {'Paper CSP':>10} {'Diff':>8}")
+    print("-" * 68)
+
+    results, failed = [], []
+    for f in npz_files:
+        try:
+            res = evaluate_single_npz(f, m=m, reg=reg, save_features=True, output_dir=output_dir)
+        except Exception as exc:  # keep going with the remaining subjects
+            failed.append((f.name, repr(exc)))
+            print(f"{f.stem.replace('_preprocessed', ''):<8} | FAILED: {exc!r}")
+            continue
+        results.append(res)
+        class_str = " vs. ".join(res["classes"])
+        paper = PAPER_CSP_DS4.get(res["subject"])
+        test = res["test_acc"] * 100
+        ref = f"{paper:>10.2f}" if paper is not None else f"{'-':>10}"
+        diff = f"{test - paper:>+8.2f}" if paper is not None else f"{'-':>8}"
+        print(f"{res['subject']:<8} {class_str:<20} {res['train_acc'] * 100:>7.2f}% {test:>7.2f}% {ref} {diff}")
+
+    if results:
+        print("-" * 68)
+        print(f"DATASET 4 SUMMARY ({len(results)} subjects; mean +/- population standard deviation)")
+        _print_mean_std("Train accuracy", np.asarray([r["train_acc"] for r in results]) * 100)
+        _print_mean_std("Test accuracy ", np.asarray([r["test_acc"] for r in results]) * 100, PAPER_CSP_DS4_MEAN_STD)
+    print("=" * 68)
+    for name, err in failed:
+        print(f"Failed: {name}: {err}")
+    if summary_path is not None and results:
+        save_results_csv(results, summary_path)
+        print(f"Per-subject results saved to: {summary_path.resolve()}")
+    return results
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Run CSP Transformation (m=3) & FLDA on Dataset 1 and/or Dataset 2a."
+        description="Run CSP Transformation (m=3) & FLDA on Datasets 1, 2a, 3 and/or 4."
     )
     parser.add_argument(
         "--dataset",
         type=str,
         default="all",
-        choices=["1", "2a", "all"],
-        help="Dataset to evaluate: '1', '2a', or 'all' (default: 'all')",
+        choices=["1", "2a", "3", "4", "all"],
+        help="Dataset to evaluate: '1', '2a', '3', '4', or 'all' (default: 'all')",
     )
     parser.add_argument("-m", type=int, default=DEFAULT_M, help="Number of filter pairs (m, default: 3).")
     parser.add_argument("--reg", type=float, default=1e-5, help="Regularization parameter (default: 1e-5).")
+    parser.add_argument("--ds3-sessions", type=int, nargs="*", default=[3],
+                        help="Dataset 3 sessions to evaluate (default: 3 = B0103T..B0903T, as in the paper).")
+    parser.add_argument("--ds3-all-sessions", action="store_true",
+                        help="Dataset 3: evaluate every preprocessed session file (overrides --ds3-sessions).")
     args = parser.parse_args()
 
     base_dir = DEFAULT_BASE_DATA
+    ds3_sessions = () if args.ds3_all_sessions else tuple(args.ds3_sessions)
 
-    if args.dataset in ["1", "all"]:
-        ds1_dir = base_dir / "BCICIV_1"
-        results_ds1 = DEFAULT_RESULTS_DIR / "BCICIV_1"
-        out_ds1 = results_ds1 / "csp_features"
-        evaluate_dataset1(
-            ds1_dir,
-            out_ds1,
-            m=args.m,
-            reg=args.reg,
-            summary_path=results_ds1 / "csp_flda_results.csv",
-        )
-
-    if args.dataset in ["2a", "all"]:
-        ds2_dir = base_dir / "BCICIV_2a"
-        results_ds2 = DEFAULT_RESULTS_DIR / "BCICIV_2a"
-        out_ds2 = results_ds2 / "csp_features"
-        evaluate_dataset2(
-            ds2_dir,
-            out_ds2,
-            m=args.m,
-            reg=args.reg,
-            summary_path=results_ds2 / "csp_flda_results.csv",
-        )
+    # (key, evaluation function, preprocessed folder, results folder, extra kwargs)
+    jobs = [
+        ("1", evaluate_dataset1, "BCICIV_1", "BCICIV_1", {}),
+        ("2a", evaluate_dataset2, "BCICIV_2a", "BCICIV_2a", {}),
+        ("3", evaluate_dataset3, "dataset_3", "dataset_3", {"sessions": ds3_sessions}),
+        ("4", evaluate_dataset4, "dataset_4", "dataset_4", {}),
+    ]
+    for key, func, in_name, out_name, extra in jobs:
+        if args.dataset not in (key, "all"):
+            continue
+        results_dir = DEFAULT_RESULTS_DIR / out_name
+        try:
+            func(
+                base_dir / in_name,
+                results_dir / "csp_features",
+                m=args.m,
+                reg=args.reg,
+                summary_path=results_dir / "csp_flda_results.csv",
+                **extra,
+            )
+        except FileNotFoundError as exc:
+            if args.dataset != "all":
+                raise
+            print(f"\n[skip] dataset {key}: {exc}")
 
 
 if __name__ == "__main__":
