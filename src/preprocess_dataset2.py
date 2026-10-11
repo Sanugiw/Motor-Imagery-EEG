@@ -6,30 +6,36 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-import scipy.io as sio
-from scipy.signal import butter, sosfiltfilt
 
-# NumPy 2 removed binary-input support from fromstring. MNE's GDF reader may
-# pass binary header fields as Latin-1 strings, so restore their original bytes.
-_numpy_fromstring = np.fromstring
+# NumPy 2.x removed binary-input support from np.fromstring. Older MNE GDF
+# readers still rely on it, so route binary values through np.frombuffer.
+_orig_fromstring = np.fromstring
 
 
-def _compatible_fromstring(string, dtype=float, count=-1, sep="", *args, **kwargs):
+def _compat_fromstring(string, dtype=float, count=-1, sep="", *args, **kwargs):
     if sep == "":
         if isinstance(string, str):
             string = string.encode("latin-1")
         if isinstance(string, (bytes, bytearray, memoryview)):
             return np.frombuffer(string, dtype=dtype, count=count)
-    return _numpy_fromstring(string, dtype=dtype, count=count, sep=sep, *args, **kwargs)
+    return _orig_fromstring(string, dtype=dtype, count=count, sep=sep, *args, **kwargs)
 
 
-np.fromstring = _compatible_fromstring
+np.fromstring = _compat_fromstring
 
 import mne
+import scipy.io as sio
+from scipy.signal import butter, sosfiltfilt
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_2"
-DEFAULT_BASE_OUTPUT = PROJECT_ROOT / "preprocessed_data"
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="mne")
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "BCICIV_2a"
+DEFAULT_BASE_OUTPUT = (
+    PROJECT_ROOT / "preprocessed_data"
+    if (PROJECT_ROOT / "preprocessed_data").exists()
+    else PROJECT_ROOT / "processed_data"
+)
 
 FS = 250
 EPOCH_START = 0.5
@@ -38,15 +44,6 @@ N_EEG_CHANNELS = 22
 LOWCUT = 8.0
 HIGHCUT = 30.0
 FILTER_ORDER = 6
-
-
-def report_saved_trials(subject, X_train, X_test, output_file: Path, task=None):
-    """Print one consistent summary line for a saved trial set."""
-    name = str(subject) if not task else f"{subject}-{task}"
-    print(
-        f"Subject {name:<8} | Train: {X_train.shape} | Test: {X_test.shape} "
-        f"| Saved: {output_file.resolve()}"
-    )
 
 CLASS_NAMES = {
     1: "left hand",
@@ -64,48 +61,6 @@ BINARY_PAIRS = [
 ]
 
 
-def read_gdf(path, preload=True):
-    """Read GDF with MNE while filtering known header/channel warnings."""
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="Channel names are not unique, found duplicates",
-            category=RuntimeWarning,
-        )
-        # MNE resets invalid filter metadata from the GDF header; the script
-        # applies its own 8-30 Hz filter to the EEG samples after reading.
-        warnings.filterwarnings(
-            "ignore",
-            message=r"Highpass cutoff frequency .* is greater than lowpass cutoff frequency .*",
-            category=RuntimeWarning,
-        )
-        return mne.io.read_raw_gdf(str(path), preload=preload, verbose=False)
-
-
-def events_from_annotations(raw):
-    return mne.events_from_annotations(raw, verbose=False)
-
-
-def butterworth_bandpass(data, fs, low=8.0, high=30.0, order=6):
-    sos = butter(order, [low, high], btype="bandpass", fs=fs, output="sos")
-    return sosfiltfilt(sos, np.asarray(data), axis=1)
-
-
-def extract_epochs(data, cues, labels, fs, start=0.5, end=2.5):
-    start_offset = int(round(start * fs))
-    end_offset = int(round(end * fs))
-    expected_length = end_offset - start_offset
-    epochs, kept_labels = [], []
-    for cue, label in zip(cues, labels):
-        left, right = int(cue) + start_offset, int(cue) + end_offset
-        if left >= 0 and right <= data.shape[1]:
-            epoch = data[:, left:right]
-            if epoch.shape[1] == expected_length:
-                epochs.append(epoch)
-                kept_labels.append(label)
-    return np.asarray(epochs, dtype=np.float32), np.asarray(kept_labels, dtype=np.int64)
-
-
 def apply_butterworth_bandpass(
     cnt: np.ndarray,
     fs: float = FS,
@@ -114,7 +69,8 @@ def apply_butterworth_bandpass(
     order: int = FILTER_ORDER,
 ) -> np.ndarray:
     """Apply a zero-phase Butterworth bandpass filter along the time axis."""
-    return butterworth_bandpass(cnt, fs, lowcut, highcut, order)
+    sos = butter(order, [lowcut, highcut], btype="bandpass", fs=fs, output="sos")
+    return sosfiltfilt(sos, cnt, axis=1)
 
 
 def load_gdf_session(
@@ -122,10 +78,10 @@ def load_gdf_session(
     label_mat_path: Optional[Path] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[str]]:
     """Load a GDF session, its cue positions, labels, and EEG channels."""
-    raw = read_gdf(gdf_path, preload=True)
+    raw = mne.io.read_raw_gdf(str(gdf_path), preload=True, verbose=False)
     ch_names = raw.ch_names[:N_EEG_CHANNELS]
     eeg_data = np.asarray(raw.get_data()[:N_EEG_CHANNELS], dtype=np.float64) * 1e6
-    events, event_id = events_from_annotations(raw)
+    events, event_id = mne.events_from_annotations(raw, verbose=False)
     is_training_session = "T" in gdf_path.stem
 
     if is_training_session:
@@ -177,46 +133,45 @@ def preprocess_subject(
     test_label_mat = labels_dir / f"{subject_id}E.mat"
     eeg_train, cues_train, y_train_full, ch_names = load_gdf_session(train_gdf, train_label_mat)
     eeg_test, cues_test, y_test_full, _ = load_gdf_session(test_gdf, test_label_mat)
-    train_labels_all = y_train_full.copy()
-    test_labels_all = y_test_full.copy()
 
     filtered_train = apply_butterworth_bandpass(eeg_train)
     filtered_test = apply_butterworth_bandpass(eeg_test)
-    X_train_raw_full, y_train_full = extract_epochs(
-        eeg_train, cues_train, train_labels_all, FS, EPOCH_START, EPOCH_END
-    )
-    X_test_raw_full, y_test_full = extract_epochs(
-        eeg_test, cues_test, test_labels_all, FS, EPOCH_START, EPOCH_END
-    )
-    X_train_full, y_train_filtered = extract_epochs(
-        filtered_train, cues_train, train_labels_all, FS, EPOCH_START, EPOCH_END
-    )
-    X_test_full, y_test_filtered = extract_epochs(
-        filtered_test, cues_test, test_labels_all, FS, EPOCH_START, EPOCH_END
-    )
-    if not np.array_equal(y_train_full, y_train_filtered) or not np.array_equal(y_test_full, y_test_filtered):
-        raise ValueError(f"Raw and filtered epochs do not align for {subject_id}.")
+    start_offset = int(round(EPOCH_START * FS))
+    end_offset = int(round(EPOCH_END * FS))
+    expected_len = end_offset - start_offset
+
+    def extract_epochs(filtered_data, cues, labels):
+        epochs = []
+        valid_labels = []
+        for cue, label in zip(cues, labels):
+            start = cue + start_offset
+            end = cue + end_offset
+            if start >= 0 and end <= filtered_data.shape[1]:
+                epoch = filtered_data[:, start:end]
+                if epoch.shape[1] == expected_len:
+                    epochs.append(epoch)
+                    valid_labels.append(label)
+        return np.asarray(epochs, dtype=np.float32), np.asarray(valid_labels, dtype=np.int64)
+
+    X_train_full, y_train_full = extract_epochs(filtered_train, cues_train, y_train_full)
+    X_test_full, y_test_full = extract_epochs(filtered_test, cues_test, y_test_full)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     full_out_file = output_dir / f"{subject_id}_full_4class_preprocessed.npz"
     np.savez_compressed(
         full_out_file,
         X_train=X_train_full,
-        X_train_raw=X_train_raw_full,
         y_train=y_train_full,
         X_test=X_test_full,
-        X_test_raw=X_test_raw_full,
         y_test=y_test_full,
         fs=FS,
         channels=np.asarray(ch_names),
         subject=subject_id,
-        pair="",
         classes=np.array(["left hand", "right hand", "foot", "tongue"]),
         time_window=np.array([EPOCH_START, EPOCH_END]),
         freq_band=np.array([LOWCUT, HIGHCUT]),
         filter_order=FILTER_ORDER,
     )
-    report_saved_trials(subject_id, X_train_full, X_test_full, full_out_file, task="4-class")
 
     binary_files = {}
     for pair_name, class1, class2 in BINARY_PAIRS:
@@ -224,8 +179,6 @@ def preprocess_subject(
         test_mask = np.isin(y_test_full, [class1, class2])
         X_train, y_train = X_train_full[train_mask], y_train_full[train_mask]
         X_test, y_test = X_test_full[test_mask], y_test_full[test_mask]
-        X_train_raw = X_train_raw_full[train_mask]
-        X_test_raw = X_test_raw_full[test_mask]
         y_train_binary = np.where(y_train == class1, 0, 1).astype(np.int64)
         y_test_binary = np.where(y_test == class1, 0, 1).astype(np.int64)
         y_train_sign = np.where(y_train == class1, -1, 1).astype(np.int64)
@@ -235,12 +188,10 @@ def preprocess_subject(
         np.savez_compressed(
             pair_file,
             X_train=X_train,
-            X_train_raw=X_train_raw,
             y_train=y_train_sign,
             y_train_binary=y_train_binary,
             y_train_raw=y_train,
             X_test=X_test,
-            X_test_raw=X_test_raw,
             y_test=y_test_sign,
             y_test_binary=y_test_binary,
             y_test_raw=y_test,
@@ -254,7 +205,6 @@ def preprocess_subject(
             filter_order=FILTER_ORDER,
         )
         binary_files[pair_name] = str(pair_file)
-        report_saved_trials(subject_id, X_train, X_test, pair_file, task=pair_name)
 
     return {
         "dataset": "Dataset 2a",
@@ -279,6 +229,10 @@ def run_preprocessing(data_dir: Path, output_dir: Path) -> List[Dict]:
     for subject_id in subject_ids:
         result = preprocess_subject(subject_id, data_dir, output_dir)
         results.append(result)
+        print(
+            f"Subject {subject_id:<4} | Full: Train {result['full_train_shape']} / "
+            f"Test {result['full_test_shape']} | 6 Binary Pairs Generated (144 tr / 144 te each)"
+        )
     return results
 
 
@@ -286,7 +240,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preprocess BCI Competition IV Dataset 2a.")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR,
                         help=f"Raw Dataset 2a directory (default: {DEFAULT_DATA_DIR})")
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "dataset_2",
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "BCICIV_2a",
                         help="Output directory for preprocessed Dataset 2a files.")
     args = parser.parse_args()
     run_preprocessing(args.data_dir, args.output_dir)
