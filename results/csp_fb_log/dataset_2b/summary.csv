@@ -1,0 +1,2 @@
+method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
+CSP-FB+LOG,2b,9,79.02777777777777,15.17007491212572

@@ -1,0 +1,2 @@
+method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
+CSP-WPD+LOG,2b,9,77.22222222222223,14.775845738364712

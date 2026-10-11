@@ -1,0 +1,2 @@
+method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
+CSP-Wavelet+LASSO,1,7,83.14285714285714,13.495275061279479

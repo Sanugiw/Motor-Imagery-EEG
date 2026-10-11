@@ -22,7 +22,7 @@ The methods cover CSP baselines, filter-bank feature selection, and three propos
 | **CSP-WPD+LASSO** | Same CSP-WPD feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. | `results_csp_wpd_lasso.py` |
 | **CSP-FB+LASSO** | Same CSP-FB feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. | `results_csp_fb_lasso.py` |
 
-The result runners are in `src/results_generation/`. Each accepts `--dataset` with `1`, `2a`, `2b`, `4`, or `all`. For example, run CSP for Dataset IIa with `python src/results_generation/results_csp.py --dataset 2a`. The scripts report per-subject classification accuracy and dataset-level mean and standard deviation.
+The result runners are in `src/results_generation/`. Each method has an individual script, and `generate_all_results.py` runs every method. Individual scripts accept `--dataset` with `1`, `2a`, `2b`, `4`, or `all`. For example, run CSP for Dataset IIa with `python src/results_generation/results_csp.py --dataset 2a`. The scripts report per-subject classification accuracy and dataset-level mean and standard deviation.
 
 ## Implementation details
 
@@ -33,7 +33,7 @@ The result runners are in `src/results_generation/`. Each accepts `--dataset` wi
 - `src/feature_selection/`: LASSO, LOG, and sparse Bayesian selectors.
 - `src/classifiers/`: FLDA ensemble implementation.
 - `src/data/`: loading utilities for preprocessed trials.
-- `src/results_generation/`: the 11 method-specific result scripts and their shared runner.
+- `src/results_generation/`: the method-specific result scripts, all-method runner, and shared runner.
 - `src/visualization/`: EEG inspection and plotting.
 
 ### Preprocessing
@@ -66,7 +66,13 @@ The scripts read data from `Data/dataset_1` through `Data/dataset_4` and save co
 
 ### Running one method
 
-For example, run each method on all four datasets or select a single dataset:
+Run all 11 methods on all four datasets:
+
+```powershell
+python src/results_generation/generate_all_results.py
+```
+
+This writes each method's subject-level accuracy and mean/std files under `results/<method>/dataset_<dataset>/`, plus `results/all_methods_summary.csv`. The method-specific folders are ignored by Git; the combined summary stays trackable. Run all methods on one dataset with `python src/results_generation/generate_all_results.py --dataset 2a`. To run just one method, use its dedicated script:
 
 ```powershell
 python src/results_generation/results_csp.py --dataset all

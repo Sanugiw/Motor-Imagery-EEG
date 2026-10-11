@@ -1,0 +1,2 @@
+method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
+SFBCSP,2a,54,78.34362139917695,13.388006579512748

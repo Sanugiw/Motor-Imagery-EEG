@@ -1,0 +1,2 @@
+method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
+Wavelet-CSP,4,14,50.83333333333333,3.7664980998943762
