@@ -1,8 +1,0 @@
-file,subject,pair,classes,train_acc,test_acc,n_train,n_test,W_shape
-BCICIV_calib_ds1a_preprocessed.npz,1a,,left vs. foot,0.91,0.83,100,100,59x6
-BCICIV_calib_ds1b_preprocessed.npz,1b,,left vs. right,0.95,0.64,100,100,59x6
-BCICIV_calib_ds1c_preprocessed.npz,1c,,left vs. right,1.0,0.77,100,100,59x6
-BCICIV_calib_ds1d_preprocessed.npz,1d,,left vs. right,1.0,0.94,100,100,59x6
-BCICIV_calib_ds1e_preprocessed.npz,1e,,left vs. right,1.0,0.98,100,100,59x6
-BCICIV_calib_ds1f_preprocessed.npz,1f,,left vs. foot,0.98,0.89,100,100,59x6
-BCICIV_calib_ds1g_preprocessed.npz,1g,,left vs. right,0.99,0.96,100,100,59x6
