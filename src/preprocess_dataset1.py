@@ -9,9 +9,7 @@ import scipy.io as sio
 from scipy.signal import butter, sosfiltfilt
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA_DIR = (
-    PROJECT_ROOT / "Data" / "BCICIV_1"
-)
+DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_1"
 DEFAULT_BASE_OUTPUT = (
     PROJECT_ROOT / "preprocessed_data"
     if (PROJECT_ROOT / "preprocessed_data").exists()
@@ -159,7 +157,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preprocess BCI Competition IV Dataset 1.")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR,
                         help=f"Raw Dataset 1 directory (default: {DEFAULT_DATA_DIR})")
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "BCICIV_1",
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "dataset_1",
                         help="Output directory for preprocessed Dataset 1 files.")
     args = parser.parse_args()
     run_preprocessing(args.data_dir, args.output_dir)

@@ -11,7 +11,7 @@ Follows Zhang et al., Sensors 2020, 20, 4749 (Sections 2.1 and 2.3):
   * Sessions 01T/02T have 120 trials (-> 80 train / 40 test), 03T-05E have 160.
   * The evaluation files (04E, 05E) usually carry no class labels in the GDF.
     Put the competition's "true labels" files next to them
-    (data/dataset_3/B0104E.mat or data/dataset_3/true_labels/B0104E.mat, variable
+    (Data/dataset_3/B0104E.mat or Data/dataset_3/true_labels/B0104E.mat, variable
     `classlabel`).  Files without labels are skipped and reported at the end.
   * 6th-order Butterworth band-pass, 8-30 Hz (zero-phase).
   * Single-trial segmentation: 0.5-2.5 s after the motor-imagery cue.
@@ -49,17 +49,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, module="mne")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _first_existing(*candidates: Path) -> Path:
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
-
-
-DEFAULT_DATA_DIR = _first_existing(
-    PROJECT_ROOT / "data" / "dataset_3",
-    PROJECT_ROOT / "Data" / "dataset_3",
-)
+DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_3"
 DEFAULT_BASE_OUTPUT = (
     PROJECT_ROOT / "preprocessed_data"
     if (PROJECT_ROOT / "preprocessed_data").exists()

@@ -553,8 +553,8 @@ def main():
 
     # (key, evaluation function, preprocessed folder, results folder, extra kwargs)
     jobs = [
-        ("1", evaluate_dataset1, "BCICIV_1", "BCICIV_1", {}),
-        ("2a", evaluate_dataset2, "BCICIV_2a", "BCICIV_2a", {}),
+        ("1", evaluate_dataset1, "dataset_1", "dataset_1", {}),
+        ("2a", evaluate_dataset2, "dataset_2", "dataset_2", {}),
         ("3", evaluate_dataset3, "dataset_3", "dataset_3", {"sessions": ds3_sessions}),
         ("4", evaluate_dataset4, "dataset_4", "dataset_4", {}),
     ]

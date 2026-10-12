@@ -30,7 +30,7 @@ from scipy.signal import butter, sosfiltfilt
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="mne")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "BCICIV_2a"
+DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_2"
 DEFAULT_BASE_OUTPUT = (
     PROJECT_ROOT / "preprocessed_data"
     if (PROJECT_ROOT / "preprocessed_data").exists()
@@ -240,7 +240,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preprocess BCI Competition IV Dataset 2a.")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR,
                         help=f"Raw Dataset 2a directory (default: {DEFAULT_DATA_DIR})")
-    parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "BCICIV_2a",
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "dataset_2",
                         help="Output directory for preprocessed Dataset 2a files.")
     args = parser.parse_args()
     run_preprocessing(args.data_dir, args.output_dir)

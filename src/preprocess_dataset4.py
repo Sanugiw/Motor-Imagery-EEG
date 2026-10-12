@@ -26,17 +26,7 @@ from scipy.signal import butter, decimate, sosfiltfilt
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-def _first_existing(*candidates: Path) -> Path:
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
-
-
-DEFAULT_DATA_DIR = _first_existing(
-    PROJECT_ROOT / "data" / "dataset_4",
-    PROJECT_ROOT / "Data" / "dataset_4",
-)
+DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_4"
 DEFAULT_BASE_OUTPUT = (
     PROJECT_ROOT / "preprocessed_data"
     if (PROJECT_ROOT / "preprocessed_data").exists()

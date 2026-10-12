@@ -6,7 +6,7 @@ Two families of figures
 A. Raw-vs-filtered inspection plot (all four datasets, straight from the raw files):
    one cue with 1 s before / 4 s after, raw EEG on top, the 8-30 Hz zero-phase
    Butterworth-filtered EEG below, cue onset and the extracted epoch window marked.
-   Output: plots/BCICIV_1, plots/BCICIV_2a, plots/dataset_3/<file>, plots/dataset_4/<subject>
+   Output: plots/dataset_1, plots/dataset_2, plots/dataset_3/<file>, plots/dataset_4/<subject>
 
 B. Epoch-level figures from the preprocessed .npz files (Datasets 3 and 4 only):
    1. Butterworth band-pass frequency response (single pass and effective zero-phase)
@@ -71,15 +71,10 @@ def _first_existing(*candidates: Path) -> Path:
     return candidates[0]
 
 
-def _data_dir(*names: str) -> Path:
-    """First existing raw-data folder among data/<name> and Data/<name>."""
-    return _first_existing(*[PROJECT_ROOT / base / n for n in names for base in ("data", "Data")])
-
-
-DEFAULT_DATA_DIR_DS1 = _data_dir("BCICIV_1", "BCICIV_1_mat")
-DEFAULT_DATA_DIR_DS2 = _data_dir("BCICIV_2a")
-DEFAULT_DATA_DIR_DS3 = _data_dir("dataset_3")
-DEFAULT_DATA_DIR_DS4 = _data_dir("dataset_4")
+DEFAULT_DATA_DIR_DS1 = PROJECT_ROOT / "Data" / "dataset_1"
+DEFAULT_DATA_DIR_DS2 = PROJECT_ROOT / "Data" / "dataset_2"
+DEFAULT_DATA_DIR_DS3 = PROJECT_ROOT / "Data" / "dataset_3"
+DEFAULT_DATA_DIR_DS4 = PROJECT_ROOT / "Data" / "dataset_4"
 DEFAULT_PREPROCESSED_DIR = _first_existing(PROJECT_ROOT / "preprocessed_data", PROJECT_ROOT / "processed_data")
 DEFAULT_PLOT_DIR = PROJECT_ROOT / "plots"
 
@@ -661,7 +656,7 @@ def run_dataset1(args) -> List[Tuple[str, str]]:
     files = sorted(args.data_dir_ds1.glob(pattern))
     if not files:
         raise FileNotFoundError(f"No Dataset 1 calibration files ('{pattern}') in {args.data_dir_ds1.resolve()}.")
-    out_dir = args.output_dir / "BCICIV_1"
+    out_dir = args.output_dir / "dataset_1"
     print(f"\n== Dataset 1: {len(files)} subject(s) ==")
     _filter_response_once(FS_DS1, out_dir)
     failed = []
@@ -679,7 +674,7 @@ def run_dataset2a(args) -> List[Tuple[str, str]]:
     present = [sub for sub in subjects if (args.data_dir_ds2 / f"{sub}T.gdf").exists()]
     if not present:
         raise FileNotFoundError(f"No Dataset 2a training GDF files found in {args.data_dir_ds2.resolve()}.")
-    out_dir = args.output_dir / "BCICIV_2a"
+    out_dir = args.output_dir / "dataset_2"
     print(f"\n== Dataset 2a: {len(present)} subject(s) ==")
     _filter_response_once(FS_DS2, out_dir)
     failed = []

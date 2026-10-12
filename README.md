@@ -1,4 +1,4 @@
-# Paper Outline
+# Motor Imagery EEG Paper Implementation
 
 ## Goal
 
@@ -8,7 +8,6 @@ The paper studies methods for classifying motor imagery from EEG. It aims to imp
 
 The paper introduces three CSP-based feature extraction methods:
 
-<<<<<<< HEAD
 1. **CSP-Wavelet:** apply a discrete wavelet transform to CSP-filtered signals and calculate statistics from the wavelet coefficients.
 2. **CSP-WPD:** apply wavelet packet decomposition to CSP-filtered signals and calculate statistics from the resulting coefficients.
 3. **CSP-FB:** apply a filter bank to CSP-filtered signals and extract log-variance features from the sub-bands.
@@ -35,33 +34,33 @@ All methods are run through the unified `src/results_generation/generate_results
 
 ### Source folders
 
-- `src/preprocessing/`: the four dataset preprocessing scripts.
+- `src/preprocess_dataset1.py` through `src/preprocess_dataset4.py`: the four dataset preprocessing scripts.
 - `src/features/`: CSP, wavelet, wavelet-packet, and filter-bank feature pipelines.
 - `src/feature_selection/`: LASSO, LOG, and sparse Bayesian selectors.
 - `src/classifiers/`: FLDA ensemble implementation.
 - `src/data/`: loading utilities for preprocessed trials.
 - `src/results_generation/`: the unified result generator and shared pipeline helper.
-- `src/visualization/`: EEG inspection and plotting.
+- `src/visualize.py` and `src/visualize_eeg.py`: EEG inspection and plotting.
 
 ### Preprocessing
 
 Run the matching preprocessing script before generating classifier results:
 
 ```powershell
-python src/preprocessing/preprocess_dataset1.py
-python src/preprocessing/preprocess_dataset2.py
-python src/preprocessing/preprocess_dataset3.py
-python src/preprocessing/preprocess_dataset4.py
+python src/preprocess_dataset1.py
+python src/preprocess_dataset2.py
+python src/preprocess_dataset3.py
+python src/preprocess_dataset4.py
 ```
 
 The scripts read data from `Data/dataset_1` through `Data/dataset_4` and save compressed trial arrays under `preprocessed_data/dataset_1` through `preprocessed_data/dataset_4`. Each saved file contains train/test epochs, labels, sampling rate, and channel metadata. The common filter is a sixth-order 8–30 Hz Butterworth band-pass; epochs are cut from 0.5 to 2.5 seconds, except Dataset 1, which uses 0.5 to 3.5 seconds.
 
 | Dataset | Data used by preprocessing |
 | ------- | -------------------------- |
-| 1 | Calibration recordings; 100 train and 100 test trials per subject. |
-| 2a | 22 EEG channels; full four-class files and six two-class pairs per subject. Test labels are read from the dataset's `true_labels` files when available. |
-| 2b | The third training session; 160 trials per subject, split into 80 train and 80 test trials. |
-| 4 | Recordings are resampled from 512 Hz to 256 Hz when necessary; runs provide 100 train and 60 test trials per subject. |
+| `Data/dataset_1` | BCI Competition IV Dataset I calibration recordings; 100 train and 100 test trials per subject. |
+| `Data/dataset_2` | BCI Competition IV Dataset IIa, 22 EEG channels; full four-class files and six two-class pairs per subject. Test labels are read from `true_labels` when available. |
+| `Data/dataset_3` | BCI Competition IV Dataset IIb; the third training session has 160 trials per subject, split into 80 train and 80 test trials. |
+| `Data/dataset_4` | Steyrl dataset; recordings are resampled from 512 Hz to 256 Hz when necessary, with 100 train and 60 test trials per subject. |
 
 ### Classifier pipeline
 
@@ -87,7 +86,7 @@ python src/results_generation/generate_results.py --method "CSP-Wavelet+LOG" --d
 
 For each selected method, the generator writes per-subject accuracies to `results/<method>/dataset_<dataset>/accuracies.csv` and mean/std summaries to `summary.csv`. Dataset 2a produces one row per subject and binary class pair. A short run can be limited with `--subject-limit N`.
 
-Generate EEG inspection plots with `python src/visualization/visualize_eeg.py --dataset all`.
+Generate EEG inspection plots with `python src/visualize.py --dataset all`.
 
 ## Results currently in the repository
 
@@ -103,8 +102,6 @@ Existing CSP results cover all four datasets. Accuracy is shown as mean ± stand
 An earlier combined-runner snapshot for Dataset 1 is also stored at `results/paper_reproduction/dataset_1/paper_table.csv`. The LASSO variants do not have saved results yet; generate them with `--method "CSP-Wavelet+LASSO"` and the corresponding method name. These numbers are project outputs, not values copied from the paper.
 
 **Evaluation caveat:** the current LOG/LASSO ensemble score is the best accuracy among the threshold models evaluated on the test labels. This uses the test set to choose the threshold and can make those ensemble results optimistic. Use a validation split to select the threshold before treating them as unbiased test accuracy.
->>>>>>> Sanugi
-
 ## Evaluation
 
 The proposed methods are evaluated on four public motor imagery EEG datasets. The experiments compare classification accuracy and feature extraction time against other methods. The paper reports CSP-FB + LOG as a strong option when considering both accuracy and computation time.

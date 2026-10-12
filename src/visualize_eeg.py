@@ -26,12 +26,8 @@ np.fromstring = _compat_fromstring
 import mne
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_DATA_DIR_DS1 = (
-    PROJECT_ROOT / "Data" / "BCICIV_1"
-    if (PROJECT_ROOT / "Data" / "BCICIV_1").exists()
-    else PROJECT_ROOT / "Data" / "BCICIV_1_mat"
-)
-DEFAULT_DATA_DIR_DS2 = PROJECT_ROOT / "Data" / "BCICIV_2a"
+DEFAULT_DATA_DIR_DS1 = PROJECT_ROOT / "Data" / "dataset_1"
+DEFAULT_DATA_DIR_DS2 = PROJECT_ROOT / "Data" / "dataset_2"
 DEFAULT_PLOT_DIR = PROJECT_ROOT / "plots"
 
 LOWCUT = 8.0
@@ -269,7 +265,7 @@ def main() -> None:
         files = sorted(args.data_dir_ds1.glob("BCICIV_calib_ds1*.mat"))
         if not files:
             raise FileNotFoundError(f"No Dataset 1 calibration files found in {args.data_dir_ds1.resolve()}.")
-        out_dir = args.output_dir / "BCICIV_1"
+        out_dir = args.output_dir / "dataset_1"
         print(f"Generating Dataset 1 inspection plots for {len(files)} subjects...")
         for mat_path in files:
             plot_dataset1_subject(
@@ -285,7 +281,7 @@ def main() -> None:
         subjects = [f"A0{i}" for i in range(1, 10)]
         if not any((args.data_dir_ds2 / f"{subject}T.gdf").exists() for subject in subjects):
             raise FileNotFoundError(f"No Dataset 2a training GDF files found in {args.data_dir_ds2.resolve()}.")
-        out_dir = args.output_dir / "BCICIV_2a"
+        out_dir = args.output_dir / "dataset_2"
         print(f"Generating Dataset 2a inspection plots for {len(subjects)} subjects...")
         for subject in subjects:
             plot_dataset2_subject(
