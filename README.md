@@ -2,18 +2,17 @@
 
 ## Goal
 
-The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction and select informative features efficiently, while maintaining high classification accuracy.
+The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction, efficiently select informative features, and maintain high classification accuracy.
 
 ## Proposed approach
 
 The paper introduces three CSP-based feature extraction methods:
 
-<<<<<<< HEAD
 1. **CSP-Wavelet:** apply a discrete wavelet transform to CSP-filtered signals and calculate statistics from the wavelet coefficients.
 2. **CSP-WPD:** apply wavelet packet decomposition to CSP-filtered signals and calculate statistics from the resulting coefficients.
 3. **CSP-FB:** apply a filter bank to CSP-filtered signals and extract log-variance features from the sub-bands.
 
-The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second stage of feature selection and classification.
+The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second-stage feature selection and classification.
 =======
 | Method | Outline |
 | ------ | ------- |
@@ -102,7 +101,7 @@ Existing CSP results cover all four datasets. Accuracy is shown as mean ± stand
 
 An earlier combined-runner snapshot for Dataset 1 is also stored at `results/paper_reproduction/dataset_1/paper_table.csv`. The LASSO variants do not have saved results yet; generate them with `--method "CSP-Wavelet+LASSO"` and the corresponding method name. These numbers are project outputs, not values copied from the paper.
 
-**Evaluation caveat:** the current LOG/LASSO ensemble score is the best accuracy among the threshold models evaluated on the test labels. This uses the test set to choose the threshold and can make those ensemble results optimistic. Use a validation split to select the threshold before treating them as unbiased test accuracy.
+**Evaluation caveat:** The current LOG/LASSO ensemble score is the best accuracy among the threshold models evaluated on the test labels. This uses the test set to choose the threshold and can make those ensemble results optimistic. Use a validation split to select the threshold before treating them as unbiased test accuracy.
 >>>>>>> Sanugi
 
 ## Evaluation
