@@ -104,6 +104,7 @@ Existing CSP results cover all four datasets. Accuracy is shown as mean ± stand
 An earlier combined-runner snapshot for Dataset 1 is also stored at `results/paper_reproduction/dataset_1/paper_table.csv`. The LASSO variants do not have saved results yet; generate them with `--method "CSP-Wavelet+LASSO"` and the corresponding method name. These numbers are project outputs, not values copied from the paper.
 
 **Evaluation caveat:** the current LOG/LASSO ensemble score is the best accuracy among the threshold models evaluated on the test labels. This uses the test set to choose the threshold and can make those ensemble results optimistic. Use a validation split to select the threshold before treating them as unbiased test accuracy.
+
 ## Evaluation
 
 The proposed methods are evaluated on four public motor imagery EEG datasets. The experiments compare classification accuracy and feature extraction time against other methods. The paper reports CSP-FB + LOG as a strong option when considering both accuracy and computation time.
