@@ -1,0 +1,2 @@
+method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
+CSP,2b,9,79.30555555555556,16.009015592687565
