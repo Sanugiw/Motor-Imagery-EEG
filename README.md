@@ -2,7 +2,7 @@
 
 ## Goal
 
-The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction and select informative features efficiently, while maintaining high classification accuracy.
+The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction, efficiently select informative features, and maintain high classification accuracy.
 
 ## Proposed approach
 
@@ -12,7 +12,7 @@ The paper introduces three CSP-based feature extraction methods:
 2. **CSP-WPD:** apply wavelet packet decomposition to CSP-filtered signals and calculate statistics from the resulting coefficients.
 3. **CSP-FB:** apply a filter bank to CSP-filtered signals and extract log-variance features from the sub-bands.
 
-The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second stage of feature selection and classification.
+The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second-stage feature selection and classification.
 =======
 | Method | Outline |
 | ------ | ------- |
