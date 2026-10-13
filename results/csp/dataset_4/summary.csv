@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-CSP,4,14,51.42857142857143,4.832805507186772
+CSP,dataset_4,14,77.14285714285714,13.384256497671615

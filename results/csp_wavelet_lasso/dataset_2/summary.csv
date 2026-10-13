@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-CSP-Wavelet+LASSO,2a,54,82.48456790123456,13.120914530246896
+CSP-Wavelet+LASSO,dataset_2,54,82.48456790123456,13.120914530246896

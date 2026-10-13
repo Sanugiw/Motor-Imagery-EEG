@@ -5,9 +5,9 @@ import csv
 from pathlib import Path
 
 if __package__:
-    from .result_runner import DATASETS, METHODS, ROOT, run_method
+    from .result_runner import DATASET_KEYS, DATASETS, METHODS, ROOT, run_method
 else:
-    from result_runner import DATASETS, METHODS, ROOT, run_method
+    from result_runner import DATASET_KEYS, DATASETS, METHODS, ROOT, run_method
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
             )
             summaries.append(summary)
 
-    if args.method == "all":
+    if summaries:
         summary_path = args.output_dir / "all_methods_summary.csv"
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         columns = [
@@ -56,10 +56,20 @@ def main():
             "mean_accuracy_percent",
             "std_accuracy_percent",
         ]
+        # Combined summary uses the short dataset keys (1, 2a, 2b, 4).
+        for summary in summaries:
+            summary["dataset"] = DATASET_KEYS.get(summary["dataset"], summary["dataset"])
+        # Replace only the (method, dataset) rows run this time; keep the rest.
+        run_keys = {(summary["method"], summary["dataset"]) for summary in summaries}
+        kept = []
+        if summary_path.exists():
+            with summary_path.open(newline="", encoding="utf-8") as handle:
+                kept = [row for row in csv.DictReader(handle)
+                        if (row["method"], row["dataset"]) not in run_keys]
         with summary_path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=columns)
             writer.writeheader()
-            writer.writerows(summaries)
+            writer.writerows(kept + summaries)
         print(f"\nSaved combined summary: {summary_path.resolve()}")
 
 

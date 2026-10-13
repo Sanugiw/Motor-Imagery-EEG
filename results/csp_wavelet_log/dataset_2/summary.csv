@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-CSP-Wavelet+LOG,2a,54,82.85751028806584,12.333006667040038
+CSP-Wavelet+LOG,dataset_2,54,82.85751028806584,12.333006667040038

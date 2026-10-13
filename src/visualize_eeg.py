@@ -16,6 +16,10 @@ B. Epoch-level figures from the preprocessed .npz files (Datasets 3 and 4 only):
    5. Class-wise band power over the epoch
    (the filter-response plot is produced for every dataset)
 
+C. Trial-timing plot (one per dataset): a single trial on a time axis relative to the
+   trial start, with the trial-start marker, the cue onset and the extracted epoch
+   window. Output: plots/dataset_N/trial_timing_<file>.png (skip with --no-timing).
+
 Units: everything is plotted in microvolts.
 
 Command line (run from the project root)
@@ -332,11 +336,12 @@ def plot_dataset4_inspection(
     post_cue_sec: float = 4.0,
     fallback_channel: int = DS4_DEFAULT_CHANNEL,
 ) -> Path:
-    """Raw vs. filtered around one Dataset 4 onset marker of run 1 (original 512 Hz).
-    `run` is one element of preprocess_dataset4.load_mat_session."""
+    """Raw vs. filtered around one Dataset 4 cue of run 1 (original 512 Hz).
+    `run` is one element of preprocess_dataset4.load_mat_session with ``run["cue"]``
+    added (trial-start marker + CUE_OFFSET)."""
     task_labels = [DS4_CLASS_LABELS[int(lab)] for lab in run["y"]]
     return _inspection_from_continuous(
-        run["X"], run["fs"], run["trial"], task_labels, ch_names,
+        run["X"], run["fs"], run["cue"], task_labels, ch_names,
         output_dir / subject / f"raw_vs_preprocessed_{subject}_run1.png",
         f"{subject} (run 1)", channel_name, trial_index, EPOCH_END_DS4, pre_cue_sec, post_cue_sec,
         fallback_channel=fallback_channel,
@@ -581,6 +586,134 @@ plot_dataset3_erd_ers = plot_band_power
 
 
 # ----------------------------------------------------------------------------------
+# C. Trial-timing plot: trial start, cue onset and the extracted epoch window
+# ----------------------------------------------------------------------------------
+TIMING_TEXT = "#0b0b0b"
+TIMING_TEXT_SECONDARY = "#52514e"
+TIMING_GRID = "#e4e3df"
+TIMING_SURFACE = "#fcfcfb"
+TIMING_CUE = "#2a78d6"
+TIMING_OLD_WINDOW = "#eb6834"
+
+
+def _gdf_annotations(gdf_path: Path):
+    """Raw GDF plus annotation samples/descriptions (trial start 768 and cue events)."""
+    import mne  # imported lazily (after the np.fromstring shim above)
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Channel names are not unique", category=RuntimeWarning)
+        raw = mne.io.read_raw_gdf(str(gdf_path), preload=True, verbose=False)
+    fs = float(raw.info["sfreq"])
+    samples = np.round(np.asarray(raw.annotations.onset) * fs).astype(int)
+    return raw, fs, samples, np.asarray(raw.annotations.description)
+
+
+def _start_and_cue(starts: np.ndarray, cues: np.ndarray, trial_index: int) -> Tuple[int, int]:
+    """The trial_index-th cue and the latest trial start (768) before it."""
+    cues, starts = np.sort(cues), np.sort(starts)
+    cue = int(cues[min(trial_index, len(cues) - 1)])
+    return int(starts[starts <= cue][-1]), cue
+
+
+def timing_info_dataset1(mat_path: Path, channel_name: str, trial_index: int) -> dict:
+    """Dataset 1 has cue markers only. Per the BCI IV-1 description each 4 s cue
+    follows 2 s blank + 2 s fixation cross, so the fixation onset is cue - 2 s."""
+    d = _import_preprocessor("preprocess_dataset1").load_dataset1_mat(mat_path)
+    ch, name = _select_channel(d["channels"], channel_name)
+    cue = int(d["positions"][min(trial_index, len(d["positions"]) - 1)])
+    return dict(
+        title=f"Dataset 1 (BCI IV-1), subject {d['subject']}", signal=d["cnt"][ch], fs=d["fs"],
+        start=cue - int(2 * d["fs"]), cue=cue, channel=name, start_tag="fixation cross",
+        start_label="Fixation cross onset (cue \u2212 2 s, per dataset description; not a file marker)",
+        window=(EPOCH_START, EPOCH_END_DS1), span=(-1.0, 8.0), trial_index=trial_index,
+    )
+
+
+def timing_info_gdf(gdf_path: Path, dataset_label: str, cue_codes: Sequence[str], n_channels: int,
+                    channel_name: str, trial_index: int, epoch_end: float) -> dict:
+    """Datasets 2a / 3: trial start (event 768) and cue events are both in the GDF."""
+    raw, fs, samples, desc = _gdf_annotations(gdf_path)
+    ch, name = _select_channel([c.split(":")[-1] for c in raw.ch_names[:n_channels]], channel_name)
+    start, cue = _start_and_cue(samples[desc == "768"], samples[np.isin(desc, list(cue_codes))], trial_index)
+    return dict(
+        title=f"{dataset_label}, {gdf_path.stem}", signal=raw.get_data(picks=[ch])[0] * 1e6, fs=fs,
+        start=start, cue=cue, channel=name, start_label="Trial start (event 768)",
+        window=(EPOCH_START, epoch_end), span=(-1.0, (cue - start) / fs + 5.5), trial_index=trial_index,
+    )
+
+
+def timing_info_dataset4(run: dict, subject: str, ch_names: Sequence[str], channel_name: str,
+                         trial_index: int, fallback_channel: int) -> dict:
+    """Dataset 4: ``trial`` markers are trial starts; ``run["cue"]`` is 3 s later."""
+    ch, name = _select_channel(ch_names, channel_name, fallback_channel)
+    i = min(trial_index, len(run["trial"]) - 1)
+    return dict(
+        title=f"Dataset 4 (Steyrl 2016), subject {subject} run 1", signal=run["X"][ch], fs=run["fs"],
+        start=int(run["trial"][i]), cue=int(run["cue"][i]), channel=name,
+        start_label="Trial start (`trial` marker)", window=(EPOCH_START, EPOCH_END_DS4),
+        # What the code used before the cue-offset fix, kept visible for comparison.
+        old_window=(EPOCH_START, EPOCH_END_DS4), span=(-1.0, 9.0), trial_index=trial_index,
+    )
+
+
+def plot_trial_timing(info: dict, output_path: Path) -> Path:
+    """One trial, 8-30 Hz filtered, on a time axis relative to the trial start."""
+    fs, start, cue = info["fs"], info["start"], info["cue"]
+    a = max(0, start + int(info["span"][0] * fs))
+    b = min(len(info["signal"]), start + int(info["span"][1] * fs))
+    trace = _filter_signal(np.asarray(info["signal"], dtype=np.float64)[None, :], fs)[0, a:b]
+    t = (np.arange(a, b) - start) / fs
+    cue_t = (cue - start) / fs
+
+    fig, ax = plt.subplots(figsize=(11, 3.8), facecolor=TIMING_SURFACE)
+    ax.set_facecolor(TIMING_SURFACE)
+    lo, hi = info["window"]
+    ax.axvspan(cue_t + lo, cue_t + hi, color=TIMING_CUE, alpha=0.14, lw=0,
+               label=f"Epoch window used ({lo:g}\u2013{hi:g} s after cue)")
+    if "old_window" in info:
+        olo, ohi = info["old_window"]
+        ax.axvspan(olo, ohi, facecolor="none", edgecolor=TIMING_OLD_WINDOW, hatch="///", lw=0,
+                   label=f"Window before the fix ({olo:g}\u2013{ohi:g} s after trial start)")
+    ax.plot(t, trace, color=TIMING_TEXT_SECONDARY, lw=0.8)
+    ax.axvline(0, color=TIMING_TEXT, lw=1.5, ls="--", label=info["start_label"])
+    ax.axvline(cue_t, color=TIMING_CUE, lw=2, label=f"Cue onset / MI start (+{cue_t:.2f} s)")
+
+    ymax = np.max(np.abs(trace)) * 1.15
+    ax.set_ylim(-ymax, ymax)
+    ax.text(0, ymax * 0.98, " " + info.get("start_tag", "trial start"), color=TIMING_TEXT, va="top", fontsize=9)
+    ax.text(cue_t, ymax * 0.98, " cue", color=TIMING_TEXT, va="top", fontsize=9)
+    ax.set_xlim(t[0], t[-1])
+    ax.set_xlabel("Time relative to trial start (s)", color=TIMING_TEXT_SECONDARY)
+    ax.set_ylabel(f"{LOWCUT:g}\u2013{HIGHCUT:g} Hz EEG (\u00b5V)", color=TIMING_TEXT_SECONDARY)
+    ax.set_title(f"{info['title']} \u2014 trial {info['trial_index'] + 1}, channel {info['channel']}",
+                 color=TIMING_TEXT, loc="left")
+    ax.grid(axis="x", color=TIMING_GRID, lw=0.6)
+    ax.tick_params(colors=TIMING_TEXT_SECONDARY)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("left", "bottom"):
+        ax.spines[side].set_color(TIMING_GRID)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False, fontsize=9,
+              labelcolor=TIMING_TEXT)
+    fig.tight_layout()
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=150, facecolor=TIMING_SURFACE)
+    plt.close(fig)
+    print(f"Saved trial-timing plot: {output_path}")
+    return output_path
+
+
+def _timing_once(build, output_path: Path, failed: List[Tuple[str, str]]) -> None:
+    """Build and save one dataset's timing plot; record a failure instead of raising."""
+    try:
+        plot_trial_timing(build(), output_path)
+    except Exception as exc:
+        failed.append((output_path.name, repr(exc)))
+        print(f"  [FAILED] {output_path.name}: {exc!r}")
+
+
+# ----------------------------------------------------------------------------------
 # Command line driver
 # ----------------------------------------------------------------------------------
 def _import_preprocessor(name: str):
@@ -625,9 +758,9 @@ def epoch_figures(dataset: int, npz_path: Path, out_dir: Path, args, seg_source:
                 save_path=save(f"segmentation_{stem}.png"))
         else:
             plot_segmentation_overview(
-                seg_source["X"][ch_idx[0]], seg_source["fs"], seg_source["trial"], seg_source["y"],
+                seg_source["X"][ch_idx[0]], seg_source["fs"], seg_source["cue"], seg_source["y"],
                 class_names, all_ch[ch_idx[0]], (w0, w1), t_start=0.0, duration=80.0,
-                title=f"{stem} (run 1, {seg_source['fs']:g} Hz) - segmentation: onset markers and [{w0}-{w1} s] windows",
+                title=f"{stem} (run 1, {seg_source['fs']:g} Hz) - segmentation: cue markers (trial marker + 3 s) and [{w0}-{w1} s] windows",
                 save_path=save(f"segmentation_{stem}_run1.png"))
 
     for k in (1, 2):
@@ -666,6 +799,10 @@ def run_dataset1(args) -> List[Tuple[str, str]]:
         except Exception as exc:
             failed.append((mat_path.name, repr(exc)))
             print(f"  [FAILED] {mat_path.name}: {exc!r}")
+    if not args.no_timing:
+        subject = files[0].stem.replace("BCICIV_calib_ds", "")
+        _timing_once(lambda: timing_info_dataset1(files[0], args.channel, args.trial),
+                     out_dir / f"trial_timing_{subject}.png", failed)
     return failed
 
 
@@ -685,6 +822,11 @@ def run_dataset2a(args) -> List[Tuple[str, str]]:
         except Exception as exc:
             failed.append((subject, repr(exc)))
             print(f"  [FAILED] {subject}: {exc!r}")
+    if not args.no_timing:
+        gdf = args.data_dir_ds2 / f"{present[0]}T.gdf"
+        _timing_once(lambda: timing_info_gdf(gdf, "Dataset 2 (BCI IV-2a)", DS2_EVENT_LABELS, N_EEG_CHANNELS_DS2,
+                                             args.channel, args.trial, EPOCH_END_DS2),
+                     out_dir / f"trial_timing_{gdf.stem}.png", failed)
     return failed
 
 
@@ -725,6 +867,11 @@ def run_dataset3(args) -> List[Tuple[str, str]]:
             failed.append((stem, repr(exc)))
             print(f"  [FAILED] {stem}: {exc!r}")
             traceback.print_exc(limit=1)
+    timing_gdf = next((f for f in files if f.stem.endswith("T")), None)
+    if not args.no_timing and timing_gdf is not None:
+        _timing_once(lambda: timing_info_gdf(timing_gdf, "Dataset 3 (BCI IV-2b)", pp.CUE_CODES, pp.N_EEG_CHANNELS,
+                                             args.channel, args.trial, EPOCH_END_DS3),
+                     out_dir / f"trial_timing_{timing_gdf.stem}.png", failed)
     return failed
 
 
@@ -742,12 +889,17 @@ def run_dataset4(args) -> List[Tuple[str, str]]:
         sid = mat_path.stem[:-1]
         try:
             run = pp.load_mat_session(mat_path)[0]
+            # ``trial`` markers are trial starts; the cue (MI onset) follows CUE_OFFSET later.
+            run["cue"] = run["trial"] + int(round(pp.CUE_OFFSET * run["fs"]))
             npz = pre_dir / f"{sid}_preprocessed.npz"
             ch_names = ([str(c) for c in np.load(npz)["channels"]] if npz.exists()
                         else [f"Ch{i:02d}" for i in range(1, run["X"].shape[0] + 1)])
             fallback = args.channels[0] if args.channels else DS4_DEFAULT_CHANNEL
             plot_dataset4_inspection(run, sid, ch_names, out_dir, args.channel, args.trial,
                                      args.pre_cue_sec, args.post_cue_sec, fallback)
+            if not args.no_timing and mat_path == files[0]:
+                _timing_once(lambda: timing_info_dataset4(run, sid, ch_names, args.channel, args.trial, fallback),
+                             out_dir / f"trial_timing_{sid}.png", failed)
             if args.no_epoch_plots:
                 continue
             if npz.exists():
@@ -806,6 +958,8 @@ def main() -> None:
                         help="Datasets 3/4: skip the segmentation overview (faster).")
     parser.add_argument("--no-epoch-plots", action="store_true",
                         help="Datasets 3/4: only the raw-vs-filtered inspection plot.")
+    parser.add_argument("--no-timing", action="store_true",
+                        help="Skip the per-dataset trial-timing plot (trial start, cue, epoch window).")
     args = parser.parse_args()
 
     import matplotlib

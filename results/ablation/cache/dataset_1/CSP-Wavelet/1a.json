@@ -1,0 +1,1 @@
+{"LASSO_without": 64.0, "LASSO_with": 65.0, "LOG_without": 73.0, "LOG_with": 73.0, "LOG_SVM": 75.0, "LOG_BLDA": 69.0, "F-score": 76.0, "GA": 62.0, "BPSO": 71.0}

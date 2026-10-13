@@ -1,15 +1,16 @@
-"""Preprocess Dataset 4: Steyrl et al. (2016) motor-imagery dataset.
+"""Preprocess Dataset 4: David Steyrl's 2016 right-hand-versus-feet EEG data.
 
 Purpose:
-    Filter and epoch right-hand versus feet recordings into train/test arrays.
+    Prepare each of the 14 subjects' continuous runs as train/test EEG epochs.
 Input:
-    Subject MAT files in ``Data/dataset_4`` (S01-S14).
+    S01-S14 MAT files in ``Data/dataset_4``. Each run has 15 channels, 512 Hz,
+    and 20 trials (10 per class).
 Processing:
-    Process runs independently, resample from 512 Hz to 256 Hz, apply sixth-order
-    zero-phase 8-30 Hz filtering, and extract 0.5-2.5 s epochs. Runs 1-5 are
-    training data; runs 6-8 are test data.
+    Runs 1-5 form training data; runs 6-8 form test data. Each run is independently
+    resampled to 256 Hz, sixth-order zero-phase 8-30 Hz filtered, and epoched from
+    0.5 to 2.5 s after each cue (3 s after each trial-start marker). The expected split is 100 train / 60 test trials.
 Output:
-    Compressed subject files in ``preprocessed_data/dataset_4``.
+    One compressed file per subject in ``preprocessed_data/dataset_4``.
 Run from the project root:
     ``python src/preprocessing/preprocess_dataset4.py``
 """
@@ -34,9 +35,17 @@ DEFAULT_BASE_OUTPUT = (
 
 ORIGINAL_FS = 512
 FS = 256  # sampling rate after downsampling (as in the paper)
+# The ``trial`` markers are trial starts; the cue (MI onset) follows 3 s later
+# (Steyrl et al. 2016 / BNCI 2014-002). Epoch times below are relative to the cue.
+CUE_OFFSET = 3.0
 EPOCH_START = 0.5
 EPOCH_END = 2.5
 N_EEG_CHANNELS = 15
+N_SUBJECTS = 14
+N_TRAIN_RUNS = 5
+N_TEST_RUNS = 3
+TRIALS_PER_RUN = 20
+TRIALS_PER_CLASS_PER_RUN = 10
 LOWCUT = 8.0
 HIGHCUT = 30.0
 FILTER_ORDER = 6
@@ -97,9 +106,9 @@ def extract_epochs(
     epoch_start: float = EPOCH_START,
     epoch_end: float = EPOCH_END,
 ):
-    """Cut [onset + epoch_start, onset + epoch_end) windows out of continuous data."""
-    start_offset = int(round(epoch_start * fs))
-    end_offset = int(round(epoch_end * fs))
+    """Cut [cue + epoch_start, cue + epoch_end) windows, where cue = trial marker + CUE_OFFSET."""
+    start_offset = int(round((CUE_OFFSET + epoch_start) * fs))
+    end_offset = int(round((CUE_OFFSET + epoch_end) * fs))
     expected_len = end_offset - start_offset
     epochs, valid_labels = [], []
     for onset, label in zip(onsets, labels):
@@ -112,14 +121,43 @@ def extract_epochs(
     return epochs, valid_labels
 
 
-def process_session(mat_path: Path):
-    """Downsample -> band-pass -> epoch every run of a session file."""
+def process_session(mat_path: Path, expected_runs: int):
+    """Validate and preprocess the expected runs in one T or E subject file."""
     X_filt, X_raw, labels, run_ids = [], [], [], []
-    for run_idx, run in enumerate(load_mat_session(mat_path), start=1):
+    runs = load_mat_session(mat_path)
+    if len(runs) != expected_runs:
+        raise ValueError(
+            f"{mat_path.name}: expected {expected_runs} runs, found {len(runs)}."
+        )
+
+    for run_idx, run in enumerate(runs, start=1):
+        if not np.isclose(run["fs"], ORIGINAL_FS):
+            raise ValueError(
+                f"{mat_path.name} run {run_idx}: expected {ORIGINAL_FS} Hz, found {run['fs']:g} Hz."
+            )
+        if len(run["trial"]) != TRIALS_PER_RUN or len(run["y"]) != TRIALS_PER_RUN:
+            raise ValueError(
+                f"{mat_path.name} run {run_idx}: expected {TRIALS_PER_RUN} onset/label pairs, "
+                f"found {len(run['trial'])} onsets and {len(run['y'])} labels."
+            )
+        class_counts = np.bincount(run["y"], minlength=3)[1:]
+        if len(class_counts) != 2 or not np.array_equal(
+            class_counts, [TRIALS_PER_CLASS_PER_RUN, TRIALS_PER_CLASS_PER_RUN]
+        ):
+            raise ValueError(
+                f"{mat_path.name} run {run_idx}: expected 10 trials per class (labels 1 and 2), "
+                f"found {class_counts.tolist()}."
+            )
+
         X_ds, trial_ds = downsample_run(run["X"], run["trial"], run["fs"])
         X_bp = apply_butterworth_bandpass(X_ds, fs=FS)
         ep_f, lab = extract_epochs(X_bp, trial_ds, run["y"])
         ep_r, _ = extract_epochs(X_ds, trial_ds, run["y"])
+        if len(ep_f) != TRIALS_PER_RUN or len(ep_r) != TRIALS_PER_RUN:
+            raise ValueError(
+                f"{mat_path.name} run {run_idx}: expected {TRIALS_PER_RUN} complete epochs, "
+                f"found {len(ep_f)} filtered and {len(ep_r)} raw epochs."
+            )
         X_filt += ep_f
         X_raw += ep_r
         labels += lab
@@ -144,8 +182,12 @@ def preprocess_subject(
     if not train_mat.exists() or not test_mat.exists():
         raise FileNotFoundError(f"Missing {train_mat.name} or {test_mat.name} in {data_dir.resolve()}.")
 
-    X_train, X_train_raw, y_train, run_train = process_session(train_mat)
-    X_test, X_test_raw, y_test, run_test = process_session(test_mat)
+    X_train, X_train_raw, y_train, run_train = process_session(
+        train_mat, expected_runs=N_TRAIN_RUNS
+    )
+    X_test, X_test_raw, y_test, run_test = process_session(
+        test_mat, expected_runs=N_TEST_RUNS
+    )
 
     y_train_binary = np.where(y_train == 1, 0, 1).astype(np.int64)
     y_test_binary = np.where(y_test == 1, 0, 1).astype(np.int64)
@@ -174,6 +216,9 @@ def preprocess_subject(
         X_test_raw=X_test_raw,
         fs=FS,
         original_fs=ORIGINAL_FS,
+        n_train_runs=N_TRAIN_RUNS,
+        n_test_runs=N_TEST_RUNS,
+        trials_per_run=TRIALS_PER_RUN,
         channels=np.asarray(list(channel_names)),
         subject=subject_id,
         classes=np.array([CLASS_NAMES[1], CLASS_NAMES[2]]),
@@ -210,9 +255,14 @@ def run_preprocessing(
     subject_ids = list(subjects) if subjects else found
     if not subject_ids:
         raise FileNotFoundError(f"No S??T.mat / S??E.mat pairs found in {data_dir.resolve()}.")
+    if subjects is None and len(found) != N_SUBJECTS:
+        print(f"[warn] Expected {N_SUBJECTS} subject pairs from the paper; found {len(found)}.")
 
     print(f"\n{'=' * 75}")
-    print("PREPROCESSING DATASET 4: Steyrl et al. 2016 (15 ch, 512 -> 256 Hz, [0.5-2.5 s])")
+    print(
+        "PREPROCESSING DATASET 4: Steyrl et al. 2016 "
+        "(15 ch, 512 -> 256 Hz, 6th-order 8-30 Hz, [0.5-2.5 s], 100/60 trials)"
+    )
     print(f"Data directory  : {data_dir.resolve()}")
     print(f"Output directory: {output_dir.resolve()}")
     print(f"Subjects        : {len(subject_ids)} -> {', '.join(subject_ids)}")
@@ -240,7 +290,9 @@ def run_preprocessing(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Preprocess Dataset 4 (Steyrl et al. 2016, right hand vs. feet).")
+    parser = argparse.ArgumentParser(
+        description="Preprocess Dataset 4 according to the paper's run and trial split."
+    )
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR,
                         help=f"Raw Dataset 4 directory (default: {DEFAULT_DATA_DIR})")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "dataset_4",

@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-CSP-FB+LASSO,4,14,52.023809523809526,6.0807584710105385
+CSP-FB+LASSO,dataset_4,14,80.59523809523809,12.795819364045387

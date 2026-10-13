@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-SBLFB,2b,9,69.16666666666667,13.307266185559428
+SBLFB,dataset_3,9,72.22222222222223,15.066724024800687

@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-WPD-CSP,2a,54,81.25,13.329796341562934
+WPD-CSP,dataset_2,54,81.25,13.329796341562934

@@ -1,2 +1,2 @@
 method,dataset,n_subjects,mean_accuracy_percent,std_accuracy_percent
-CSP-WPD+LASSO,2b,9,76.52777777777777,17.79296226525644
+CSP-WPD+LASSO,dataset_3,9,76.52777777777777,17.79296226525644
