@@ -1,4 +1,17 @@
-"""Preprocess BCI Competition IV Dataset 2a (Graz BCI)."""
+"""Preprocess Dataset 2: BCI Competition IV Dataset IIa (Graz BCI).
+
+Purpose:
+    Filter EEG recordings and create train/test motor-imagery epochs.
+Input:
+    GDF recordings and available true-label MAT files in ``Data/dataset_2``.
+Processing:
+    Keep 22 EEG channels, apply sixth-order zero-phase 8-30 Hz filtering, and
+    extract 0.5-2.5 s epochs. Save four-class data and six binary class pairs.
+Output:
+    Compressed subject files in ``preprocessed_data/dataset_2``.
+Run from the project root:
+    ``python src/preprocessing/preprocess_dataset2.py``
+"""
 
 import argparse
 import warnings
@@ -29,7 +42,7 @@ from scipy.signal import butter, sosfiltfilt
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="mne")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_2"
 DEFAULT_BASE_OUTPUT = (
     PROJECT_ROOT / "preprocessed_data"

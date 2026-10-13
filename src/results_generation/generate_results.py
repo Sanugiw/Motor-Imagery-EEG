@@ -36,7 +36,7 @@ def main():
     for dataset in datasets:
         for method in methods:
             completed += 1
-            print(f"\n[{completed}/{total}] Running {method} on Dataset {dataset}", flush=True)
+            print(f"\n[{completed}/{total}] Running {method} on {dataset}", flush=True)
             _, summary = run_method(
                 method,
                 dataset,

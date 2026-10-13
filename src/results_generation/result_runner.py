@@ -40,7 +40,13 @@ METHODS = {
     "CSP-FB+LASSO": "csp_fb_lasso",
 }
 
-DATASETS = ("1", "2a", "2b", "4")
+DATASET_KEYS = {
+    "dataset_1": "1",
+    "dataset_2": "2a",
+    "dataset_3": "2b",
+    "dataset_4": "4",
+}
+DATASETS = tuple(DATASET_KEYS)
 PAIR_ORDER = {name: i for i, name in enumerate(("LR", "LF", "LT", "RF", "RT", "FT"))}
 
 
@@ -131,7 +137,7 @@ def _write_csv(path: Path, rows, columns):
 def run_method(method, dataset, output_dir=None, preprocessed_dir=None, subject_limit=None):
     if method not in METHODS:
         raise ValueError(f"Unknown method {method!r}; choose from {tuple(METHODS)}")
-    trials = list(iter_dataset_trials(dataset, preprocessed_dir))
+    trials = list(iter_dataset_trials(DATASET_KEYS[dataset], preprocessed_dir))
     if subject_limit:
         subjects = list(dict.fromkeys(trial.subject for trial in trials))[:subject_limit]
         trials = [trial for trial in trials if trial.subject in subjects]
@@ -152,7 +158,7 @@ def run_method(method, dataset, output_dir=None, preprocessed_dir=None, subject_
                 "std_accuracy_percent": float(np.std(scores, ddof=0))}]
 
     root = Path(output_dir) if output_dir else ROOT / "results"
-    folder = root / METHODS[method] / f"dataset_{dataset}"
+    folder = root / METHODS[method] / dataset
     detail_path = folder / "accuracies.csv"
     summary_path = folder / "summary.csv"
     _write_csv(detail_path, rows, ["subject", "pair", "accuracy_percent"])

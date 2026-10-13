@@ -1,20 +1,18 @@
-"""Preprocess Dataset 3: BCI Competition IV Dataset 2b (Graz BCI, B01-B09).
+"""Preprocess Dataset 3: BCI Competition IV Dataset IIb (Graz BCI).
 
-Follows Zhang et al., Sensors 2020, 20, 4749 (Sections 2.1 and 2.3):
-  * 3 EEG channels (C3, Cz, C4) at 250 Hz; the 3 EOG channels are dropped.
-  * The paper uses only the third training session of each subject (B0103T ...
-    B0903T): 160 trials (80 left / 80 right), the first 80 trials = training set,
-    the remaining 80 = test set.  This script processes EVERY session file it
-    finds (45 files = 9 subjects x 5 sessions: 01T, 02T, 03T, 04E, 05E) with that
-    same rule (first 80 trials -> train, remaining trials -> test), so the paper's
-    protocol is simply the *03T files (use --sessions 3 to process only those).
-  * Sessions 01T/02T have 120 trials (-> 80 train / 40 test), 03T-05E have 160.
-  * The evaluation files (04E, 05E) usually carry no class labels in the GDF.
-    Put the competition's "true labels" files next to them
-    (Data/dataset_3/B0104E.mat or Data/dataset_3/true_labels/B0104E.mat, variable
-    `classlabel`).  Files without labels are skipped and reported at the end.
-  * 6th-order Butterworth band-pass, 8-30 Hz (zero-phase).
-  * Single-trial segmentation: 0.5-2.5 s after the motor-imagery cue.
+Purpose:
+    Filter GDF sessions and create train/test motor-imagery epochs.
+Input:
+    B01-B09 GDF sessions in ``Data/dataset_3``. Evaluation sessions require
+    competition true-label MAT files beside each GDF or in ``true_labels``.
+Processing:
+    Keep C3, Cz, and C4 at 250 Hz; apply sixth-order zero-phase 8-30 Hz
+    filtering and extract 0.5-2.5 s epochs. All sessions are processed by
+    default; use ``--sessions 3`` for the paper's B0103T-B0903T protocol.
+Output:
+    Compressed session files in ``preprocessed_data/dataset_3``.
+Run from the project root:
+    ``python src/preprocessing/preprocess_dataset3.py``
 """
 
 import argparse
@@ -46,7 +44,7 @@ from scipy.signal import butter, sosfiltfilt
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="mne")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_3"

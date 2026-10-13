@@ -1,4 +1,17 @@
-"""Preprocess BCI Competition IV Dataset 1 (Berlin BCI)."""
+"""Preprocess Dataset 1: BCI Competition IV Dataset I (Berlin BCI).
+
+Purpose:
+    Filter EEG recordings and create train/test motor-imagery epochs.
+Input:
+    Calibration MAT files in ``Data/dataset_1``.
+Processing:
+    Apply sixth-order zero-phase 8-30 Hz Butterworth filtering and extract
+    0.5-3.5 s epochs; split each subject into 100 training and 100 test trials.
+Output:
+    Compressed subject files in ``preprocessed_data/dataset_1``.
+Run from the project root:
+    ``python src/preprocessing/preprocess_dataset1.py``
+"""
 
 import argparse
 from pathlib import Path
@@ -8,7 +21,7 @@ import numpy as np
 import scipy.io as sio
 from scipy.signal import butter, sosfiltfilt
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_1"
 DEFAULT_BASE_OUTPUT = (
     PROJECT_ROOT / "preprocessed_data"

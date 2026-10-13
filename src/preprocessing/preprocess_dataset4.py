@@ -1,18 +1,17 @@
-"""Preprocess Dataset 4: Steyrl et al. (2016) right hand vs. feet MI (BNCI Horizon 2020).
+"""Preprocess Dataset 4: Steyrl et al. (2016) motor-imagery dataset.
 
-Follows Zhang et al., Sensors 2020, 20, 4749 (Sections 2.1 and 2.3):
-  * 15 EEG channels, 14 subjects (S01 ... S14), right hand vs. feet.
-  * Recorded at 512 Hz and downsampled to 256 Hz.
-  * Runs 1-5 (file S??T.mat, 100 trials) are the training set,
-    runs 6-8 (file S??E.mat, 60 trials) are the test set.
-  * 6th-order Butterworth band-pass, 8-30 Hz (zero-phase).
-  * Single-trial segmentation: 0.5-2.5 s after the motor-imagery onset
-    (the `trial` marker of the .mat files).
-
-Each .mat file holds a struct array `data`; every element is one run with
-X (samples x 15), trial (onset sample, 1-based MATLAB index), y (1 = right hand,
-2 = feet), fs and classes.  Runs are processed separately so that filtering and
-resampling never run across the gap between two recordings.
+Purpose:
+    Filter and epoch right-hand versus feet recordings into train/test arrays.
+Input:
+    Subject MAT files in ``Data/dataset_4`` (S01-S14).
+Processing:
+    Process runs independently, resample from 512 Hz to 256 Hz, apply sixth-order
+    zero-phase 8-30 Hz filtering, and extract 0.5-2.5 s epochs. Runs 1-5 are
+    training data; runs 6-8 are test data.
+Output:
+    Compressed subject files in ``preprocessed_data/dataset_4``.
+Run from the project root:
+    ``python src/preprocessing/preprocess_dataset4.py``
 """
 
 import argparse
@@ -23,7 +22,7 @@ import numpy as np
 import scipy.io as sio
 from scipy.signal import butter, decimate, sosfiltfilt
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 DEFAULT_DATA_DIR = PROJECT_ROOT / "Data" / "dataset_4"
