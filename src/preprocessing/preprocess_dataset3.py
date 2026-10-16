@@ -7,8 +7,9 @@ Input:
     competition true-label MAT files beside each GDF or in ``true_labels``.
 Processing:
     Keep C3, Cz, and C4 at 250 Hz; apply sixth-order zero-phase 8-30 Hz
-    filtering and extract 0.5-2.5 s epochs. All sessions are processed by
-    default; use ``--sessions 3`` for the paper's B0103T-B0903T protocol.
+    filtering and extract 0.5-2.5 s epochs. By default only session 3
+    (B0103T-B0903T, the paper's protocol) is processed; ``--sessions 1 2 3 4 5``
+    processes every session.
 Output:
     Compressed session files in ``preprocessed_data/dataset_3``.
 Run from the project root:
@@ -63,7 +64,7 @@ N_TEST = 80
 LOWCUT = 8.0
 HIGHCUT = 30.0
 FILTER_ORDER = 6
-DEFAULT_PATTERN = "B0?0?[TE].gdf"  # every session (01T,02T,03T,04E,05E) of every subject
+DEFAULT_PATTERN = "B0?03T.gdf"  # session 3 of every subject, as in the paper
 
 # GDF event codes of BCI Competition IV 2b
 CODE_TRIAL_START = "768"
@@ -337,8 +338,8 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_BASE_OUTPUT / "dataset_3",
                         help="Output directory for preprocessed Dataset 3 files.")
     parser.add_argument("--sessions", type=int, nargs="*", default=None,
-                        help="Only these sessions, e.g. --sessions 3 for the paper's B0103T..B0903T "
-                             "(default: all five sessions of every subject).")
+                        help="Only these sessions, e.g. --sessions 1 2 3 4 5 for all of them "
+                             "(default: session 3, the paper's B0103T..B0903T).")
     parser.add_argument("--pattern", type=str, default=None,
                         help="Custom glob instead of --sessions, e.g. --pattern B0101T.gdf")
     args = parser.parse_args()

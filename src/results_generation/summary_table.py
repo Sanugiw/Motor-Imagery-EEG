@@ -40,11 +40,6 @@ DATASETS = {
     "dataset_4": ("Dataset 4", 14),
 }
 
-# Categorical palette in fixed method order (validated for colour-vision deficiencies).
-SERIES_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
-TEXT, TEXT_SECONDARY, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
-
-
 def _accuracies(path: Path) -> np.ndarray:
     with path.open(newline="", encoding="utf-8") as handle:
         return np.array([float(row["accuracy_percent"]) for row in csv.DictReader(handle)])
@@ -81,37 +76,7 @@ def build_table(results_dir: Path):
 
 
 def plot_summary(stats, groups, output_path: Path) -> None:
-    """Grouped bars (one group per dataset + All data), one bar per method, ±1 std whiskers."""
-    methods = list(stats)
-    width = 0.8 / len(methods)
-    x = np.arange(len(groups))
-    fig, ax = plt.subplots(figsize=(12, 5.4), facecolor=SURFACE)
-    ax.set_facecolor(SURFACE)
-    for i, method in enumerate(methods):
-        means = np.array([mean for mean, _ in stats[method]])
-        stds = np.array([std for _, std in stats[method]])
-        ax.bar(x - 0.4 + (i + 0.5) * width, means, width * 0.92, yerr=stds, label=method,
-               color=SERIES_COLORS[i % len(SERIES_COLORS)], edgecolor=SURFACE, linewidth=0.6,
-               error_kw=dict(ecolor=TEXT_SECONDARY, elinewidth=0.8, capsize=2, capthick=0.8))
-    ax.set_xticks(x, groups, color=TEXT)
-    ax.set_ylim(0, 100)
-    ax.set_ylabel("Accuracy (%), mean ± std", color=TEXT_SECONDARY)
-    ax.set_title("Average classification accuracy by dataset", color=TEXT, loc="left")
-    ax.grid(axis="y", color=GRID, lw=0.6)
-    ax.set_axisbelow(True)
-    ax.tick_params(colors=TEXT_SECONDARY, length=0)
-    for side in ("top", "right", "left"):
-        ax.spines[side].set_visible(False)
-    ax.spines["bottom"].set_color(GRID)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=4, frameon=False, labelcolor=TEXT)
-    fig.tight_layout()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=200, facecolor=SURFACE)
-    plt.close(fig)
-
-
-def plot_summary_paper(stats, groups, output_path: Path) -> None:
-    """The same data drawn like the paper's Figure 7 (MATLAB-style jet bars, boxed axes)."""
+    """Grouped bars drawn like the paper's Figure 7 (MATLAB-style jet bars, boxed axes, ±1 std)."""
     methods = list(stats)
     colors = plt.get_cmap("jet")(np.linspace(0.0, 1.0, len(methods)))
     width = 0.84 / len(methods)
@@ -149,9 +114,8 @@ def plot_summary_paper(stats, groups, output_path: Path) -> None:
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--results-dir", type=Path, default=ROOT / "results")
-    parser.add_argument("--plot-path", type=Path, default=ROOT / "plots" / "summary_accuracy.png")
-    parser.add_argument("--paper-plot-path", type=Path, default=ROOT / "plots" / "summary_accuracy_paper.png",
-                        help="Figure 7-style version of the chart (jet colours, boxed axes).")
+    parser.add_argument("--plot-path", type=Path, default=ROOT / "plots" / "summary_accuracy.png",
+                        help="Figure 7-style bar chart.")
     args = parser.parse_args()
 
     rows, stats, warnings = build_table(args.results_dir)
@@ -173,12 +137,11 @@ def main():
     )
 
     plot_summary(stats, columns[1:], args.plot_path)
-    plot_summary_paper(stats, columns[1:], args.paper_plot_path)
 
     print("\n".join(lines))
     for warning in warnings:
         print(f"[warn] {warning}")
-    print(f"\nSaved: {csv_path}\nSaved: {md_path}\nSaved: {args.plot_path}\nSaved: {args.paper_plot_path}")
+    print(f"\nSaved: {csv_path}\nSaved: {md_path}\nSaved: {args.plot_path}")
 
 
 if __name__ == "__main__":

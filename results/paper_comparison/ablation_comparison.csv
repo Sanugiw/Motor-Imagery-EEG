@@ -1,0 +1,181 @@
+table,setting,row,paper,ours,difference
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (without),Dataset 1,80.71,81.14,0.43
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (without),Dataset 2,80.53,80.12,-0.41
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (without),Dataset 3,76.94,76.67,-0.27
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (without),Dataset 4,76.55,76.55,-0.0
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (without),All data,79.5,79.24,-0.26
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (without),Dataset 1,81.86,81.43,-0.43
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (without),Dataset 2,80.95,80.65,-0.3
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (without),Dataset 3,75.14,75.14,-0.0
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (without),Dataset 4,76.79,74.05,-2.74
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (without),All data,79.71,79.02,-0.69
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (without),Dataset 1,78.29,81.29,3.0
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (without),Dataset 2,79.51,81.04,1.53
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (without),Dataset 3,77.36,72.22,-5.14
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (without),Dataset 4,73.33,76.9,3.57
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (without),All data,78.15,79.43,1.28
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (with),Dataset 1,82.71,84.14,1.43
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (with),Dataset 2,82.69,82.48,-0.21
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (with),Dataset 3,77.64,77.22,-0.42
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (with),Dataset 4,78.57,79.88,1.31
+"Table 6 (LASSO, secondary selection)",CSP-Wavelet+LASSO (with),All data,81.46,81.62,0.17
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (with),Dataset 1,85.43,83.14,-2.29
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (with),Dataset 2,82.91,83.04,0.13
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (with),Dataset 3,75.97,76.53,0.56
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (with),Dataset 4,79.17,78.45,-0.72
+"Table 6 (LASSO, secondary selection)",CSP-WPD+LASSO (with),All data,81.75,81.58,-0.17
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (with),Dataset 1,86,86.14,0.14
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (with),Dataset 2,82.57,83.73,1.16
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (with),Dataset 3,80.97,74.86,-6.11
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (with),Dataset 4,78.81,80.71,1.9
+"Table 6 (LASSO, secondary selection)",CSP-FB+LASSO (with),All data,82.06,82.48,0.42
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (without),Dataset 1,80.71,84.0,3.29
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (without),Dataset 2,80.63,80.45,-0.18
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (without),Dataset 3,75.97,76.11,0.14
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (without),Dataset 4,77.38,77.86,0.48
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (without),All data,79.6,79.85,0.25
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (without),Dataset 1,81.57,83.0,1.43
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (without),Dataset 2,80.4,80.65,0.25
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (without),Dataset 3,76.11,76.94,0.83
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (without),Dataset 4,77.86,75.6,-2.26
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (without),All data,79.62,79.6,-0.02
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (without),Dataset 1,81.71,81.0,-0.71
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (without),Dataset 2,79.22,79.41,0.19
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (without),Dataset 3,79.17,75.97,-3.2
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (without),Dataset 4,74.76,76.19,1.43
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (without),All data,78.68,78.64,-0.04
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (with),Dataset 1,84.29,86.43,2.14
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (with),Dataset 2,83.4,82.86,-0.54
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (with),Dataset 3,78.19,77.22,-0.97
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (with),Dataset 4,79.4,80.83,1.43
+"Table 7 (LOG, secondary selection)",CSP-Wavelet+LOG (with),All data,82.25,82.21,-0.04
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (with),Dataset 1,85,84.71,-0.29
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (with),Dataset 2,83.05,82.93,-0.12
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (with),Dataset 3,78.75,77.22,-1.53
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (with),Dataset 4,80.83,78.45,-2.38
+"Table 7 (LOG, secondary selection)",CSP-WPD+LOG (with),All data,82.38,81.72,-0.66
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (with),Dataset 1,88.86,85.86,-3.0
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (with),Dataset 2,82.15,83.24,1.09
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (with),Dataset 3,81.53,79.03,-2.5
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (with),Dataset 4,80.12,82.02,1.9
+"Table 7 (LOG, secondary selection)",CSP-FB+LOG (with),All data,82.3,82.81,0.51
+Table 8 (feature selection),CSP-Wavelet + F-score,Dataset 1,82.86,81.43,-1.43
+Table 8 (feature selection),CSP-Wavelet + F-score,Dataset 2,80.79,80.09,-0.7
+Table 8 (feature selection),CSP-Wavelet + F-score,Dataset 3,75.83,73.61,-2.22
+Table 8 (feature selection),CSP-Wavelet + F-score,Dataset 4,76.79,77.5,0.71
+Table 8 (feature selection),CSP-Wavelet + F-score,All data,79.76,79.08,-0.68
+Table 8 (feature selection),CSP-Wavelet + GA,Dataset 1,79.29,72.43,-6.86
+Table 8 (feature selection),CSP-Wavelet + GA,Dataset 2,80.09,78.31,-1.78
+Table 8 (feature selection),CSP-Wavelet + GA,Dataset 3,75.97,72.22,-3.75
+Table 8 (feature selection),CSP-Wavelet + GA,Dataset 4,75.12,75.95,0.83
+Table 8 (feature selection),CSP-Wavelet + GA,All data,78.76,76.77,-1.99
+Table 8 (feature selection),CSP-Wavelet + BPSO,Dataset 1,81.29,77.57,-3.72
+Table 8 (feature selection),CSP-Wavelet + BPSO,Dataset 2,80.17,77.53,-2.64
+Table 8 (feature selection),CSP-Wavelet + BPSO,Dataset 3,78.47,74.44,-4.03
+Table 8 (feature selection),CSP-Wavelet + BPSO,Dataset 4,76.43,76.07,-0.36
+Table 8 (feature selection),CSP-Wavelet + BPSO,All data,79.46,76.96,-2.5
+Table 8 (feature selection),CSP-Wavelet + LASSO,Dataset 1,82.71,84.14,1.43
+Table 8 (feature selection),CSP-Wavelet + LASSO,Dataset 2,82.69,82.48,-0.21
+Table 8 (feature selection),CSP-Wavelet + LASSO,Dataset 3,77.64,77.22,-0.42
+Table 8 (feature selection),CSP-Wavelet + LASSO,Dataset 4,78.57,79.88,1.31
+Table 8 (feature selection),CSP-Wavelet + LASSO,All data,81.46,81.62,0.17
+Table 8 (feature selection),CSP-Wavelet + LOG,Dataset 1,84.29,86.43,2.14
+Table 8 (feature selection),CSP-Wavelet + LOG,Dataset 2,83.4,82.86,-0.54
+Table 8 (feature selection),CSP-Wavelet + LOG,Dataset 3,78.19,77.22,-0.97
+Table 8 (feature selection),CSP-Wavelet + LOG,Dataset 4,79.4,80.83,1.43
+Table 8 (feature selection),CSP-Wavelet + LOG,All data,82.25,82.21,-0.04
+Table 8 (feature selection),CSP-WPD + F-score,Dataset 1,81.57,82.57,1.0
+Table 8 (feature selection),CSP-WPD + F-score,Dataset 2,80.56,79.48,-1.08
+Table 8 (feature selection),CSP-WPD + F-score,Dataset 3,75.56,74.72,-0.84
+Table 8 (feature selection),CSP-WPD + F-score,Dataset 4,77.97,76.55,-1.42
+Table 8 (feature selection),CSP-WPD + F-score,All data,79.67,78.74,-0.93
+Table 8 (feature selection),CSP-WPD + GA,Dataset 1,81.57,73.71,-7.86
+Table 8 (feature selection),CSP-WPD + GA,Dataset 2,80.59,78.15,-2.44
+Table 8 (feature selection),CSP-WPD + GA,Dataset 3,74.72,75.28,0.56
+Table 8 (feature selection),CSP-WPD + GA,Dataset 4,77.14,74.29,-2.85
+Table 8 (feature selection),CSP-WPD + GA,All data,79.47,76.83,-2.64
+Table 8 (feature selection),CSP-WPD + BPSO,Dataset 1,81.14,77.43,-3.71
+Table 8 (feature selection),CSP-WPD + BPSO,Dataset 2,80.08,78.97,-1.11
+Table 8 (feature selection),CSP-WPD + BPSO,Dataset 3,74.86,74.72,-0.14
+Table 8 (feature selection),CSP-WPD + BPSO,Dataset 4,75.59,72.62,-2.97
+Table 8 (feature selection),CSP-WPD + BPSO,All data,78.86,77.33,-1.53
+Table 8 (feature selection),CSP-WPD + LASSO,Dataset 1,85.43,83.14,-2.29
+Table 8 (feature selection),CSP-WPD + LASSO,Dataset 2,82.91,83.04,0.13
+Table 8 (feature selection),CSP-WPD + LASSO,Dataset 3,75.97,76.53,0.56
+Table 8 (feature selection),CSP-WPD + LASSO,Dataset 4,79.17,78.45,-0.72
+Table 8 (feature selection),CSP-WPD + LASSO,All data,81.75,81.58,-0.17
+Table 8 (feature selection),CSP-WPD + LOG,Dataset 1,85,84.71,-0.29
+Table 8 (feature selection),CSP-WPD + LOG,Dataset 2,83.05,82.93,-0.12
+Table 8 (feature selection),CSP-WPD + LOG,Dataset 3,78.75,77.22,-1.53
+Table 8 (feature selection),CSP-WPD + LOG,Dataset 4,80.83,78.45,-2.38
+Table 8 (feature selection),CSP-WPD + LOG,All data,82.38,81.72,-0.66
+Table 8 (feature selection),CSP-FB + F-score,Dataset 1,82.29,83.29,1.0
+Table 8 (feature selection),CSP-FB + F-score,Dataset 2,80.74,81.3,0.56
+Table 8 (feature selection),CSP-FB + F-score,Dataset 3,78.75,79.03,0.28
+Table 8 (feature selection),CSP-FB + F-score,Dataset 4,77.26,76.79,-0.47
+Table 8 (feature selection),CSP-FB + F-score,All data,80.07,80.47,0.4
+Table 8 (feature selection),CSP-FB + GA,Dataset 1,81.86,76.43,-5.43
+Table 8 (feature selection),CSP-FB + GA,Dataset 2,80.03,78.97,-1.06
+Table 8 (feature selection),CSP-FB + GA,Dataset 3,78.75,74.58,-4.17
+Table 8 (feature selection),CSP-FB + GA,Dataset 4,74.05,77.26,3.21
+Table 8 (feature selection),CSP-FB + GA,All data,79.05,78.01,-1.04
+Table 8 (feature selection),CSP-FB + BPSO,Dataset 1,81.86,79.29,-2.57
+Table 8 (feature selection),CSP-FB + BPSO,Dataset 2,79.49,80.63,1.14
+Table 8 (feature selection),CSP-FB + BPSO,Dataset 3,79.17,73.61,-5.56
+Table 8 (feature selection),CSP-FB + BPSO,Dataset 4,73.81,77.14,3.33
+Table 8 (feature selection),CSP-FB + BPSO,All data,78.7,79.19,0.49
+Table 8 (feature selection),CSP-FB + LASSO,Dataset 1,86,86.14,0.14
+Table 8 (feature selection),CSP-FB + LASSO,Dataset 2,82.57,83.73,1.16
+Table 8 (feature selection),CSP-FB + LASSO,Dataset 3,80.97,74.86,-6.11
+Table 8 (feature selection),CSP-FB + LASSO,Dataset 4,78.81,80.71,1.9
+Table 8 (feature selection),CSP-FB + LASSO,All data,82.06,82.48,0.42
+Table 8 (feature selection),CSP-FB + LOG,Dataset 1,88.86,85.86,-3.0
+Table 8 (feature selection),CSP-FB + LOG,Dataset 2,82.15,83.24,1.09
+Table 8 (feature selection),CSP-FB + LOG,Dataset 3,81.53,79.03,-2.5
+Table 8 (feature selection),CSP-FB + LOG,Dataset 4,80.12,82.02,1.9
+Table 8 (feature selection),CSP-FB + LOG,All data,82.3,82.81,0.51
+Table 9 (classifier),CSP-Wavelet+LOG SVM,Dataset 1,85,85.43,0.43
+Table 9 (classifier),CSP-Wavelet+LOG SVM,Dataset 2,82.11,82.63,0.52
+Table 9 (classifier),CSP-Wavelet+LOG SVM,Dataset 3,78.47,78.19,-0.28
+Table 9 (classifier),CSP-Wavelet+LOG SVM,Dataset 4,76.67,80.95,4.28
+Table 9 (classifier),CSP-Wavelet+LOG SVM,All data,81.06,82.11,1.05
+Table 9 (classifier),CSP-Wavelet+LOG BLDA,Dataset 1,83.14,85.86,2.72
+Table 9 (classifier),CSP-Wavelet+LOG BLDA,Dataset 2,82.99,83.01,0.02
+Table 9 (classifier),CSP-Wavelet+LOG BLDA,Dataset 3,78.33,78.47,0.14
+Table 9 (classifier),CSP-Wavelet+LOG BLDA,Dataset 4,79.52,80.95,1.43
+Table 9 (classifier),CSP-Wavelet+LOG BLDA,All data,81.92,82.42,0.5
+Table 9 (classifier),CSP-Wavelet+LOG FLDA,Dataset 1,84.29,86.43,2.14
+Table 9 (classifier),CSP-Wavelet+LOG FLDA,Dataset 2,83.4,82.86,-0.54
+Table 9 (classifier),CSP-Wavelet+LOG FLDA,Dataset 3,78.19,77.22,-0.97
+Table 9 (classifier),CSP-Wavelet+LOG FLDA,Dataset 4,79.4,80.83,1.43
+Table 9 (classifier),CSP-Wavelet+LOG FLDA,All data,82.25,82.21,-0.04
+Table 9 (classifier),CSP-WPD+LOG SVM,Dataset 1,84.29,83.86,-0.43
+Table 9 (classifier),CSP-WPD+LOG SVM,Dataset 2,82.82,82.69,-0.13
+Table 9 (classifier),CSP-WPD+LOG SVM,Dataset 3,78.75,78.19,-0.56
+Table 9 (classifier),CSP-WPD+LOG SVM,Dataset 4,77.02,79.52,2.5
+Table 9 (classifier),CSP-WPD+LOG SVM,All data,81.54,81.78,0.24
+Table 9 (classifier),CSP-WPD+LOG BLDA,Dataset 1,84.29,83.86,-0.43
+Table 9 (classifier),CSP-WPD+LOG BLDA,Dataset 2,82.91,83.09,0.18
+Table 9 (classifier),CSP-WPD+LOG BLDA,Dataset 3,80.28,77.36,-2.92
+Table 9 (classifier),CSP-WPD+LOG BLDA,Dataset 4,79.52,79.52,0.0
+Table 9 (classifier),CSP-WPD+LOG BLDA,All data,82.18,81.95,-0.23
+Table 9 (classifier),CSP-WPD+LOG FLDA,Dataset 1,85,84.71,-0.29
+Table 9 (classifier),CSP-WPD+LOG FLDA,Dataset 2,83.05,82.93,-0.12
+Table 9 (classifier),CSP-WPD+LOG FLDA,Dataset 3,78.75,77.22,-1.53
+Table 9 (classifier),CSP-WPD+LOG FLDA,Dataset 4,80.83,78.45,-2.38
+Table 9 (classifier),CSP-WPD+LOG FLDA,All data,82.38,81.72,-0.66
+Table 9 (classifier),CSP-FB+LOG SVM,Dataset 1,89.14,87.14,-2.0
+Table 9 (classifier),CSP-FB+LOG SVM,Dataset 2,82.54,83.06,0.52
+Table 9 (classifier),CSP-FB+LOG SVM,Dataset 3,80.83,78.75,-2.08
+Table 9 (classifier),CSP-FB+LOG SVM,Dataset 4,79.52,83.33,3.81
+Table 9 (classifier),CSP-FB+LOG SVM,All data,82.4,82.99,0.59
+Table 9 (classifier),CSP-FB+LOG BLDA,Dataset 1,89.29,86.29,-3.0
+Table 9 (classifier),CSP-FB+LOG BLDA,Dataset 2,82.64,83.81,1.17
+Table 9 (classifier),CSP-FB+LOG BLDA,Dataset 3,80.28,79.86,-0.42
+Table 9 (classifier),CSP-FB+LOG BLDA,Dataset 4,79.4,81.19,1.79
+Table 9 (classifier),CSP-FB+LOG BLDA,All data,82.4,83.16,0.76
+Table 9 (classifier),CSP-FB+LOG FLDA,Dataset 1,88.86,85.86,-3.0
+Table 9 (classifier),CSP-FB+LOG FLDA,Dataset 2,82.15,83.24,1.09
+Table 9 (classifier),CSP-FB+LOG FLDA,Dataset 3,81.53,79.03,-2.5
+Table 9 (classifier),CSP-FB+LOG FLDA,Dataset 4,80.12,82.02,1.9
+Table 9 (classifier),CSP-FB+LOG FLDA,All data,82.3,82.81,0.51

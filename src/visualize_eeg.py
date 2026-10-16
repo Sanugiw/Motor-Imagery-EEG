@@ -27,8 +27,8 @@ Command line (run from the project root)
     python src/visualize_eeg.py --dataset all
     python src/visualize_eeg.py --dataset dataset_1
     python src/visualize_eeg.py --dataset dataset_2 --subject A01
-    python src/visualize_eeg.py --dataset dataset_3       # all sessions
-    python src/visualize_eeg.py --dataset dataset_3 --session 3
+    python src/visualize_eeg.py --dataset dataset_3       # session 3 (the paper's)
+    python src/visualize_eeg.py --dataset dataset_3 --session 1
     python src/visualize_eeg.py --dataset dataset_3 --subject B01
     python src/visualize_eeg.py --dataset dataset_4
     python src/visualize_eeg.py --dataset dataset_4 --subject S01 --no-segmentation
@@ -931,8 +931,8 @@ def main() -> None:
                         help="Dataset folder to plot: dataset_1 through dataset_4, or all (default: all).")
     parser.add_argument("--subject", default=None,
                         help="One subject only: 1a (ds1), A01 (ds2a), B01 (ds3), S01 (ds4). Default: every subject.")
-    parser.add_argument("--session", type=int, default=None,
-                        help="Dataset 3 only: restrict to one session (3 = B0103T..B0903T, the paper's).")
+    parser.add_argument("--session", type=int, default=3,
+                        help="Dataset 3 only: session to plot (default: 3 = B0103T..B0903T, the paper's).")
     parser.add_argument("--data-dir-ds1", type=Path, default=DEFAULT_DATA_DIR_DS1)
     parser.add_argument("--data-dir-ds2", type=Path, default=DEFAULT_DATA_DIR_DS2)
     parser.add_argument("--data-dir-ds3", type=Path, default=DEFAULT_DATA_DIR_DS3)

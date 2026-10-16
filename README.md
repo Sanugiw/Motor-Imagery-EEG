@@ -41,10 +41,11 @@ src/data/data_loader.py        loads preprocessed trials for every dataset
 src/features/                  CSP, CSP-Wavelet, CSP-WPD, CSP-FB and baseline feature extractors
 src/feature_selection/         LASSO, LOG, SBL, and F-score / GA / BPSO (Table 8)
 src/classifiers/               threshold ensemble (FLDA, or SVM / BLDA for Table 9), BLDA
-src/results_generation/        result generator, summary table + chart, Tables 6–9
+src/results_generation/        result generator, summary table + chart, Tables 6–9,
+                               comparison with the paper (paper_values.py holds the published numbers)
 src/visualize_eeg.py           inspection, segmentation and trial-timing plots
-results/                       per-method accuracies, summaries, ablation tables
-plots/                         EEG plots and the summary chart
+results/                       per-method accuracies, summaries, ablation tables, paper comparison
+plots/                         EEG plots, summary charts, paper-comparison plots
 ```
 
 ## Pipeline
@@ -61,6 +62,7 @@ raw files ─► preprocess_datasetN.py ─► preprocessed_data/*.npz
               results/<method>/dataset_N/accuracies.csv
               ─► summary_table.py    summary table + Fig. 7-style chart
               ─► ablation_tables.py  Tables 6–9
+              ─► paper_comparison.py results vs the paper's Tables 2–9
 ```
 
 ### Preprocessing (paper Sections 2.1, 2.3)
@@ -79,7 +81,7 @@ Dataset 4's markers are trial starts, and the cue follows 3 s later (`CUE_OFFSET
 ```powershell
 python src/preprocessing/preprocess_dataset1.py
 python src/preprocessing/preprocess_dataset2.py
-python src/preprocessing/preprocess_dataset3.py --sessions 3
+python src/preprocessing/preprocess_dataset3.py      # session 3 by default, as in the paper
 python src/preprocessing/preprocess_dataset4.py
 ```
 
@@ -117,6 +119,9 @@ python src/results_generation/summary_table.py
 python src/results_generation/ablation_tables.py
 python src/results_generation/ablation_tables.py --tables-only           # rebuild from cache
 
+# comparison with the paper's published results (run after the two scripts above)
+python src/results_generation/paper_comparison.py
+
 # EEG plots: raw vs filtered, segmentation, trial timing
 python src/visualize_eeg.py --dataset all
 ```
@@ -126,9 +131,13 @@ python src/visualize_eeg.py --dataset all
 | Output | Contents |
 | ------ | -------- |
 | `results/summary_table.md`, `.csv` | Mean ± std accuracy per method and dataset, plus "All data" |
-| `plots/summary_accuracy.png` | Grouped bar chart in the style of the paper's Figure 7 |
+| `plots/summary_accuracy.png` | Grouped bar chart of the same numbers, drawn like the paper's Figure 7 |
 | `results/ablation/ablation_tables.html`, `.tex`, `.md`, `table6…9.csv` | Paper Tables 6–9 in the paper's layout (the `.tex` needs `booktabs` and `multirow`) |
 | `plots/dataset_N/trial_timing_*.png` | One trial per dataset with trial start, cue and epoch window marked |
+| `results/paper_comparison/summary_comparison.md`, `.csv` | Ours vs paper per method and dataset, with subject-level agreement |
+| `results/paper_comparison/ablation_comparison.md`, `.csv` | Tables 6–9, ours vs paper for every cell |
+| `results/paper_comparison/per_subject_comparison.csv` | Paper and our accuracy for each of the 84 units and 8 methods |
+| `plots/paper_comparison/*.png` | Paper-vs-ours dot plot, difference heatmap, per-subject scatter, Tables 6–9 chart |
 
 "All data" pools all 84 units (7 + 54 + 9 + 14), as the paper does, and std is the population std; both reproduce the paper's own numbers.
 
@@ -147,7 +156,37 @@ Mean ± std classification accuracy (%), from `results/summary_table.md`:
 | CSP-WPD+LOG | 84.71 ± 11.95 | 82.93 ± 12.67 | 77.22 ± 14.78 | 78.45 ± 14.55 | 81.72 ± 13.40 |
 | CSP-FB+LOG | 85.86 ± 12.76 | 83.24 ± 12.94 | 79.03 ± 15.17 | 82.02 ± 11.04 | 82.81 ± 12.99 |
 
-Compared with the paper (All data: CSP 79.58, CSP-Wavelet+LOG 82.25, CSP-WPD+LOG 82.38, CSP-FB+LOG 82.3), the proposed methods reproduce closely and keep their advantage over CSP. SFBCSP and SBLFB stay below the paper on Datasets 3 and 4. In Tables 6–9 the paper's orderings hold: the secondary selection adds 2–4 points, LOG ≥ LASSO > F-score > GA/BPSO, and FLDA, SVM and BLDA are within 0.5 points of each other.
+![Mean ± std accuracy per method and dataset](plots/summary_accuracy.png)
+
+### Comparison with the paper
+
+The paper's per-subject results (Tables 2–5) and Tables 6–9 are transcribed in `src/results_generation/paper_values.py`; their means and standard deviations reproduce the values printed in the paper to within rounding. `paper_comparison.py` compares them with the results above.
+
+Difference in mean accuracy, ours − paper (percentage points), with subject-level agreement over all 84 units:
+
+| Method | Dataset 1 | Dataset 2 | Dataset 3 | Dataset 4 | All data | Subject-level r | Mean abs. difference |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| CSP | −0.29 | +1.22 | +0.56 | +2.38 | +1.22 | 0.96 | 2.81 |
+| Wavelet-CSP | −1.57 | +0.95 | −0.56 | +0.72 | +0.54 | 0.95 | 3.53 |
+| WPD-CSP | +4.29 | +0.39 | 0.00 | +2.86 | +1.08 | 0.94 | 3.34 |
+| SFBCSP | +2.29 | +2.14 | −1.94 | −7.02 | +0.18 | 0.81 | 7.08 |
+| SBLFB | −0.43 | −0.46 | +1.67 | −7.62 | −1.42 | 0.82 | 6.38 |
+| CSP-Wavelet+LOG | +2.14 | −0.54 | −0.97 | +1.43 | −0.03 | 0.95 | 3.14 |
+| CSP-WPD+LOG | −0.29 | −0.12 | −1.53 | −2.38 | −0.66 | 0.94 | 3.18 |
+| CSP-FB+LOG | −3.00 | +1.09 | −2.50 | +1.90 | +0.50 | 0.94 | 3.51 |
+
+- **Overall agreement.** On All data the three proposed methods are within 0.7 points of the paper and keep their advantage over CSP (paper: CSP 79.58, CSP-Wavelet+LOG 82.25, CSP-WPD+LOG 82.38, CSP-FB+LOG 82.3).
+- **Subject level.** For every method except SFBCSP and SBLFB, our per-subject accuracies correlate with the paper's at r = 0.94–0.96 with a mean absolute difference of about 3 points, so the same subjects are easy or hard in both.
+- **SFBCSP and SBLFB** agree least (r ≈ 0.81, mean absolute difference 6–7 points) and are about 7 points below the paper on Dataset 4; see *Differences from the paper still open*.
+- **Small datasets.** CSP-FB+LOG is 3.0 and 2.5 points below the paper on Datasets 1 and 3, which have only 7 and 9 subjects, so one or two subjects move the mean by that much.
+- **Tables 6–9.** Tables 6, 7 and 9 agree within about 1 point, and the paper's orderings hold: the secondary selection adds 2–4 points, LOG ≥ LASSO > F-score > GA/BPSO, and FLDA, SVM and BLDA are within 0.5 points of each other. GA and BPSO score 1–3 points below the paper (see *Implementation assumptions*).
+- **Typo in the paper.** The Dataset 2 standard deviations printed in Table 3 (e.g. 80.36 ± 3.98) should read ±13.98; the paper's own per-subject values give 13.98.
+
+![Paper vs ours per method and dataset](plots/paper_comparison/accuracy_paper_vs_ours.png)
+
+![Difference heatmap, ours − paper](plots/paper_comparison/difference_heatmap.png)
+
+![Per-subject accuracy, ours vs paper](plots/paper_comparison/per_subject_scatter.png)
 
 ### Evaluation caveats
 
