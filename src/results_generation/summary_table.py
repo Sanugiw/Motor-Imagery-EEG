@@ -110,10 +110,48 @@ def plot_summary(stats, groups, output_path: Path) -> None:
     plt.close(fig)
 
 
+def plot_summary_paper(stats, groups, output_path: Path) -> None:
+    """The same data drawn like the paper's Figure 7 (MATLAB-style jet bars, boxed axes)."""
+    methods = list(stats)
+    colors = plt.get_cmap("jet")(np.linspace(0.0, 1.0, len(methods)))
+    width = 0.84 / len(methods)
+    x = np.arange(len(groups))
+    fig, ax = plt.subplots(figsize=(8.2, 7.6), facecolor="white")
+    for i, method in enumerate(methods):
+        means = np.array([mean for mean, _ in stats[method]])
+        stds = np.array([std for _, std in stats[method]])
+        ax.bar(x - 0.42 + (i + 0.5) * width, means, width, yerr=stds, label=method.replace("-", "−"),
+               color=colors[i], edgecolor="black", linewidth=0.6,
+               error_kw=dict(ecolor="black", elinewidth=1.4, capsize=4, capthick=1.4))
+    ax.set_xticks(x, [g.replace("All data", "Alldata") for g in groups], fontsize=13)
+    ax.set_xlim(-0.5, len(groups) - 0.5)
+    ax.set_ylim(0, 100)
+    ax.set_yticks(np.arange(0, 101, 10))
+    ax.tick_params(axis="y", labelsize=13, direction="in", right=True)
+    ax.tick_params(axis="x", direction="in", top=True, length=0)
+    ax.set_ylabel("Mean and Std", fontsize=14)
+    for spine in ax.spines.values():
+        spine.set_color("black")
+        spine.set_linewidth(0.8)
+    # Matplotlib fills legend columns first; reorder so it reads across rows like the paper.
+    ncol = 4
+    handles, labels = ax.get_legend_handles_labels()
+    nrow = -(-len(handles) // ncol)
+    order = [r * ncol + c for c in range(ncol) for r in range(nrow) if r * ncol + c < len(handles)]
+    ax.legend([handles[i] for i in order], [labels[i] for i in order], loc="upper center",
+              bbox_to_anchor=(0.5, -0.07), ncol=ncol, fontsize=11, frameon=True, edgecolor="black",
+              fancybox=False, handlelength=2.6, handleheight=1.1, columnspacing=1.0, handletextpad=0.6)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=200, facecolor="white", bbox_inches="tight", pad_inches=0.15)
+    plt.close(fig)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--results-dir", type=Path, default=ROOT / "results")
     parser.add_argument("--plot-path", type=Path, default=ROOT / "plots" / "summary_accuracy.png")
+    parser.add_argument("--paper-plot-path", type=Path, default=ROOT / "plots" / "summary_accuracy_paper.png",
+                        help="Figure 7-style version of the chart (jet colours, boxed axes).")
     args = parser.parse_args()
 
     rows, stats, warnings = build_table(args.results_dir)
@@ -135,11 +173,12 @@ def main():
     )
 
     plot_summary(stats, columns[1:], args.plot_path)
+    plot_summary_paper(stats, columns[1:], args.paper_plot_path)
 
     print("\n".join(lines))
     for warning in warnings:
         print(f"[warn] {warning}")
-    print(f"\nSaved: {csv_path}\nSaved: {md_path}\nSaved: {args.plot_path}")
+    print(f"\nSaved: {csv_path}\nSaved: {md_path}\nSaved: {args.plot_path}\nSaved: {args.paper_plot_path}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
-Datasets,CSP-Wavelet+LOG (without),CSP-WPD+LOG (without),CSP-FB+LOG (without),CSP-Wavelet+LOG (with),CSP-WPD+LOG (with),CSP-FB+LOG (with)
-Dataset 1,84.00,83.00,81.00,86.43,84.71,85.86
-Dataset 2,80.45,80.65,79.41,82.86,82.93,83.24
-Dataset 3,76.11,76.94,75.97,77.22,77.22,79.03
-Dataset 4,77.86,75.60,76.19,80.83,78.45,82.02
+,Without Secondary Feature Selection,Without Secondary Feature Selection,Without Secondary Feature Selection,With Secondary Feature Selection,With Secondary Feature Selection,With Secondary Feature Selection
+Datasets,CSP-Wavelet+LOG,CSP-WPD+LOG,CSP-FB+LOG,CSP-Wavelet+LOG,CSP-WPD+LOG,CSP-FB+LOG
+dataset 1,84.00,83.00,81.00,86.43,84.71,85.86
+dataset 2,80.45,80.65,79.41,82.86,82.93,83.24
+dataset 3,76.11,76.94,75.97,77.22,77.22,79.03
+dataset 4,77.86,75.60,76.19,80.83,78.45,82.02
 All data,79.85,79.60,78.64,82.21,81.72,82.81

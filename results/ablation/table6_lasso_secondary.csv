@@ -1,6 +1,7 @@
-Datasets,CSP-Wavelet+LASSO (without),CSP-WPD+LASSO (without),CSP-FB+LASSO (without),CSP-Wavelet+LASSO (with),CSP-WPD+LASSO (with),CSP-FB+LASSO (with)
-Dataset 1,81.14,81.43,81.29,84.14,83.14,86.14
-Dataset 2,80.12,80.65,81.04,82.48,83.04,83.73
-Dataset 3,76.67,75.14,72.22,77.22,76.53,74.86
-Dataset 4,76.55,74.05,76.90,79.88,78.45,80.71
+,Without Secondary Feature Selection,Without Secondary Feature Selection,Without Secondary Feature Selection,With Secondary Feature Selection,With Secondary Feature Selection,With Secondary Feature Selection
+Datasets,CSP-Wavelet+LASSO,CSP-WPD+LASSO,CSP-FB+LASSO,CSP-Wavelet+LASSO,CSP-WPD+LASSO,CSP-FB+LASSO
+dataset 1,81.14,81.43,81.29,84.14,83.14,86.14
+dataset 2,80.12,80.65,81.04,82.48,83.04,83.73
+dataset 3,76.67,75.14,72.22,77.22,76.53,74.86
+dataset 4,76.55,74.05,76.90,79.88,78.45,80.71
 All data,79.24,79.02,79.43,81.62,81.58,82.48

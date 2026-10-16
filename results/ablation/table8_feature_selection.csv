@@ -1,4 +1,4 @@
-Feature extraction,Feature selection,Dataset 1,Dataset 2,Dataset 3,Dataset 4,All data
+Feature Extraction,Feature Selection,Dataset 1,Dataset 2,Dataset 3,Dataset 4,All Data
 CSP-Wavelet,F-score,81.43,80.09,73.61,77.50,79.08
 CSP-Wavelet,GA,72.43,78.31,72.22,75.95,76.77
 CSP-Wavelet,BPSO,77.57,77.53,74.44,76.07,76.96

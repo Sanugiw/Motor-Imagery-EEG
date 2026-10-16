@@ -4,3 +4,4 @@ scikit-learn
 PyWavelets
 mne
 matplotlib
+joblib

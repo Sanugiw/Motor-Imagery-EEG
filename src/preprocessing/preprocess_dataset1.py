@@ -95,7 +95,7 @@ def preprocess_dataset1_subject(mat_path: Path, output_dir: Path) -> Dict:
     start_offset = int(round(EPOCH_START * FS))
     end_offset = int(round(EPOCH_END * FS))
     expected_len = end_offset - start_offset
-    epochs = []
+    epochs, raw_epochs = [], []
     valid_labels = []
     for position, label in zip(data["positions"], data["labels"]):
         start = position + start_offset
@@ -104,9 +104,11 @@ def preprocess_dataset1_subject(mat_path: Path, output_dir: Path) -> Dict:
             epoch = filtered_cnt[:, start:end]
             if epoch.shape[1] == expected_len:
                 epochs.append(epoch)
+                raw_epochs.append(data["cnt"][:, start:end])
                 valid_labels.append(label)
 
     X = np.asarray(epochs, dtype=np.float32)
+    X_raw = np.asarray(raw_epochs, dtype=np.float32)
     y = np.asarray(valid_labels, dtype=np.int64)
     X_train, y_train = X[:N_TRAIN], y[:N_TRAIN]
     X_test = X[N_TRAIN:N_TRAIN + N_TEST]
@@ -124,6 +126,9 @@ def preprocess_dataset1_subject(mat_path: Path, output_dir: Path) -> Dict:
         X_test=X_test,
         y_test=y_test,
         y_test_binary=y_test_binary,
+        # unfiltered epochs of the same windows (used by SFBCSP / SBLFB)
+        X_train_raw=X_raw[:N_TRAIN],
+        X_test_raw=X_raw[N_TRAIN:N_TRAIN + N_TEST],
         fs=FS,
         classes=np.asarray(data["classes"]),
         clab=np.asarray(data["channels"]),

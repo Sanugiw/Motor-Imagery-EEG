@@ -7,7 +7,9 @@ For every subject (and Dataset 2 class pair) and each proposed feature extractor
   * Table 8:   F-score, GA and BPSO selection + FLDA, next to LASSO and LOG.
   * Table 9:   the LOG threshold ensemble with linear SVM, BLDA or FLDA.
 Per-subject results are cached in ``results/ablation/cache`` so an interrupted run
-resumes; tables go to ``results/ablation/``. "All data" pools every subject.
+resumes. Tables are laid out as in the paper (grouped headers) and written to
+``results/ablation/`` as ablation_tables.html, .tex (booktabs), .md and one .csv
+per table. "All data" pools every subject.
 
 Run from the project root:
     python src/results_generation/ablation_tables.py            # all datasets
@@ -112,53 +114,225 @@ def _mean(collected, datasets, extractor_name, metric, dataset=None):
     return f"{np.mean(values):.2f}" if values else "n/a"
 
 
-def _write(name, title, header, rows):
-    OUT.mkdir(parents=True, exist_ok=True)
-    with (OUT / f"{name}.csv").open("w", newline="", encoding="utf-8") as handle:
+# ----------------------------------------------------------------------------------
+# Table layout. Each table is a dict:
+#   number, name, caption
+#   stub:   header(s) of the leading label column(s), e.g. ["Datasets"]
+#   groups: [(group heading or None, [column headings])]  -> merged header row
+#   rows:   [[stub cell(s)..., value cells...]]
+# A repeated first stub cell (Table 8's feature extraction) is written once per block.
+# ----------------------------------------------------------------------------------
+def _columns(table):
+    return [col for _, cols in table["groups"] for col in cols]
+
+
+def _blocks(rows):
+    """Row spans of consecutive equal first cells: [(start, length)]."""
+    spans, start = [], 0
+    for i in range(1, len(rows) + 1):
+        if i == len(rows) or rows[i][0] != rows[start][0]:
+            spans.append((start, i - start))
+            start = i
+    return spans
+
+
+def _grouped(table):
+    return any(label for label, _ in table["groups"])
+
+
+def _to_csv(table):
+    with (OUT / f"{table['name']}.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(header)
-        writer.writerows(rows)
-    lines = [f"### {title}", "", "| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
-    lines += ["| " + " | ".join(map(str, row)) + " |" for row in rows]
+        if _grouped(table):
+            writer.writerow([""] * len(table["stub"])
+                            + [label or "" for label, cols in table["groups"] for _ in cols])
+        writer.writerow(table["stub"] + _columns(table))
+        writer.writerows(table["rows"])
+
+
+def _to_markdown(table):
+    prefix = lambda label, col: f"{label}: {col}" if label else col
+    header = table["stub"] + [prefix(label, col) for label, cols in table["groups"] for col in cols]
+    lines = [f"**Table {table['number']}.** {table['caption']}", "",
+             "| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
+    spans = dict(_blocks(table["rows"])) if len(table["stub"]) > 1 else {}
+    for i, row in enumerate(table["rows"]):
+        cells = list(row)
+        if spans and i not in spans:
+            cells[0] = ""  # repeated feature extraction label
+        lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)
+
+
+def _to_html(table):
+    n_stub = len(table["stub"])
+    head = []
+    if _grouped(table):
+        first = "".join(
+            f'<th rowspan="2" class="stub">{s}</th>' for s in table["stub"]
+        ) + "".join(
+            f'<th colspan="{len(cols)}" class="group">{label or ""}</th>'
+            for label, cols in table["groups"]
+        )
+        head.extend(
+            (
+                f"<tr>{first}</tr>",
+                "<tr>"
+                + "".join(f"<th>{c}</th>" for c in _columns(table))
+                + "</tr>",
+            )
+        )
+    else:
+        head.append("<tr>" + "".join(f'<th class="stub">{s}</th>' for s in table["stub"])
+                    + "".join(f"<th>{c}</th>" for c in _columns(table)) + "</tr>")
+    spans = dict(_blocks(table["rows"])) if n_stub > 1 else {}
+    body = []
+    for i, row in enumerate(table["rows"]):
+        cells = []
+        for j, cell in enumerate(row):
+            if j == 0 and n_stub > 1:
+                if i not in spans:
+                    continue
+                cells.append(f'<td rowspan="{spans[i]}" class="block">{cell}</td>')
+            else:
+                cells.append(f"<td>{cell}</td>")
+        body.append("<tr>" + "".join(cells) + "</tr>")
+    return (f'<table>\n<caption><b>Table {table["number"]}.</b> {table["caption"]}</caption>\n'
+            f'<thead>\n{chr(10).join(head)}\n</thead>\n<tbody>\n{chr(10).join(body)}\n</tbody>\n</table>')
+
+
+def _tex_escape(text):
+    return str(text).replace("&", r"\&").replace("%", r"\%").replace("_", r"\_")
+
+
+def _to_latex(table):
+    n_stub, columns = len(table["stub"]), _columns(table)
+    lines = [r"\begin{table}[htbp]", r"\centering", r"\small",
+             rf"\caption{{{_tex_escape(table['caption'])}}}", rf"\label{{tab:{table['name']}}}",
+             rf"\begin{{tabular}}{{{'l' * n_stub}{'c' * len(columns)}}}", r"\toprule"]
+    if _grouped(table):
+        cells, rules, col = [""] * n_stub, [], n_stub + 1
+        for label, cols in table["groups"]:
+            cells.append(rf"\multicolumn{{{len(cols)}}}{{c}}{{\textbf{{{_tex_escape(label or '')}}}}}")
+            rules.append(rf"\cmidrule(lr){{{col}-{col + len(cols) - 1}}}")
+            col += len(cols)
+        lines += [" & ".join(cells) + r" \\", " ".join(rules)]
+    lines.extend(
+        (
+            " & ".join(
+                rf"\textbf{{{_tex_escape(c)}}}"
+                for c in table["stub"] + columns
+            )
+            + r" \\",
+            r"\midrule",
+        )
+    )
+    spans = dict(_blocks(table["rows"])) if n_stub > 1 else {}
+    for i, row in enumerate(table["rows"]):
+        cells = [_tex_escape(c) for c in row]
+        if spans:
+            if i in spans:
+                if i:
+                    lines.append(r"\midrule")
+                cells[0] = rf"\multirow{{{spans[i]}}}{{*}}{{{cells[0]}}}"
+            else:
+                cells[0] = ""
+        if not spans and row[0] == "All data":
+            lines.append(r"\midrule")
+        lines.append(" & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    return "\n".join(lines)
+
+
+HTML_PAGE = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ablation tables</title>
+<style>
+  body {{ font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; color: #111;
+         background: #fff; margin: 0; padding: 32px 16px; }}
+  main {{ max-width: 1100px; margin: 0 auto; display: grid; gap: 40px; }}
+  p.note {{ margin: 0; color: #444; font-size: 0.9rem; }}
+  .wrap {{ overflow-x: auto; }}
+  table {{ border-collapse: collapse; width: 100%; font-size: 0.95rem; font-variant-numeric: tabular-nums; }}
+  caption {{ caption-side: top; padding-bottom: 10px; font-size: 0.95rem; }}
+  thead {{ border-top: 1.5px solid #111; border-bottom: 1px solid #111; }}
+  tbody {{ border-bottom: 1.5px solid #111; }}
+  th, td {{ padding: 6px 10px; text-align: center; white-space: nowrap; }}
+  th {{ font-weight: 700; }}
+  th.group {{ border-bottom: 1px solid #111; }}
+  tbody tr + tr td {{ border-top: 1px solid #c8c8c8; }}
+  td.block {{ border-right: 0; vertical-align: middle; }}
+</style></head>
+<body><main>
+<p class="note">{note}</p>
+{tables}
+</main></body></html>
+"""
 
 
 def build_tables(datasets):
     collected = load_results(datasets)
     labels = [DATASETS[d] for d in datasets]
     row_keys = [*datasets, None]
-    row_labels = [*labels, "All data"]
-    sections = []
+    row_labels = [*(label.lower() for label in labels), "All data"]  # paper: "dataset 1" ... "All data"
+    tables = []
 
-    for table, selector in (("table6_lasso_secondary", "LASSO"), ("table7_log_secondary", "LOG")):
-        header = ["Datasets", *(f"{e}+{selector} (without)" for e in EXTRACTORS),
-                  *(f"{e}+{selector} (with)" for e in EXTRACTORS)]
-        rows = [[label, *(_mean(collected, datasets, e, f"{selector}_{mode}", d)
-                          for mode in ("without", "with") for e in EXTRACTORS)]
-                for label, d in zip(row_labels, row_keys)]
-        number = 6 if selector == "LASSO" else 7
-        sections.append(_write(table, f"Table {number}. Effect of secondary feature selection ({selector})",
-                               header, rows))
+    for number, selector in ((6, "LASSO"), (7, "LOG")):
+        methods = [f"{e}+{selector}" for e in EXTRACTORS]
+        tables.append(dict(
+            number=number,
+            name=f"table{number}_{selector.lower()}_secondary",
+            caption=("The effect of secondary feature selection on average classification accuracy "
+                     f"of various datasets (the {selector} method)."),
+            stub=["Datasets"],
+            groups=[("Without Secondary Feature Selection", methods),
+                    ("With Secondary Feature Selection", methods)],
+            rows=[[label, *(_mean(collected, datasets, e, f"{selector}_{mode}", d)
+                            for mode in ("without", "with") for e in EXTRACTORS)]
+                  for label, d in zip(row_labels, row_keys)],
+        ))
 
-    header = ["Feature extraction", "Feature selection", *labels, "All data"]
-    rows = []
-    for e in EXTRACTORS:
-        for selector, metric in (("F-score", "F-score"), ("GA", "GA"), ("BPSO", "BPSO"),
-                                 ("LASSO", "LASSO_with"), ("LOG", "LOG_with")):
-            rows.append([e, selector, *(_mean(collected, datasets, e, metric, d) for d in row_keys)])
-    sections.append(_write("table8_feature_selection", "Table 8. Effect of feature selection method",
-                           header, rows))
+    selectors = (("F-score", "F-score"), ("GA", "GA"), ("BPSO", "BPSO"),
+                 ("LASSO", "LASSO_with"), ("LOG", "LOG_with"))
+    tables.append(dict(
+        number=8,
+        name="table8_feature_selection",
+        caption="The effect of different feature selection methods on average classification accuracy "
+                "of various datasets.",
+        stub=["Feature Extraction", "Feature Selection"],
+        groups=[(None, [*labels, "All Data"])],
+        rows=[[e, selector, *(_mean(collected, datasets, e, metric, d) for d in row_keys)]
+              for e in EXTRACTORS for selector, metric in selectors],
+    ))
 
-    header = ["Datasets", *(f"{e}+LOG {c}" for e in EXTRACTORS for c in ("SVM", "BLDA", "FLDA"))]
-    rows = [[label, *(_mean(collected, datasets, e, metric, d) for e in EXTRACTORS
-                      for metric in ("LOG_SVM", "LOG_BLDA", "LOG_with"))]
-            for label, d in zip(row_labels, row_keys)]
-    sections.append(_write("table9_classifiers", "Table 9. Effect of classifier (LOG selection)",
-                           header, rows))
+    classifiers = (("SVM", "LOG_SVM"), ("BLDA", "LOG_BLDA"), ("FLDA", "LOG_with"))
+    tables.append(dict(
+        number=9,
+        name="table9_classifiers",
+        caption="The effect of different classifiers on average classification accuracy of various datasets.",
+        stub=["Datasets"],
+        groups=[(f"{e}+LOG", [c for c, _ in classifiers]) for e in EXTRACTORS],
+        rows=[[label, *(_mean(collected, datasets, e, metric, d)
+                        for e in EXTRACTORS for _, metric in classifiers)]
+              for label, d in zip(row_labels, row_keys)],
+    ))
 
-    text = "Average classification accuracy (%), as in the paper's Tables 6-9.\n\n" + "\n\n".join(sections) + "\n"
-    (OUT / "ablation_tables.md").write_text(text, encoding="utf-8")
-    print(text)
+    OUT.mkdir(parents=True, exist_ok=True)
+    note = ("Average classification accuracy (%). \"All data\" pools every subject and Dataset 2 class pair, "
+            "as in the paper's Tables 6-9.")
+    for table in tables:
+        _to_csv(table)
+    markdown = note + "\n\n" + "\n\n".join(_to_markdown(t) for t in tables) + "\n"
+    (OUT / "ablation_tables.md").write_text(markdown, encoding="utf-8")
+    (OUT / "ablation_tables.html").write_text(
+        HTML_PAGE.format(note=note, tables="\n".join(f'<div class="wrap">{_to_html(t)}</div>' for t in tables)),
+        encoding="utf-8")
+    (OUT / "ablation_tables.tex").write_text(
+        "% Requires \\usepackage{booktabs} and \\usepackage{multirow}\n\n"
+        + "\n\n".join(_to_latex(t) for t in tables) + "\n", encoding="utf-8")
+    print(markdown)
+    print(f"Saved tables to {OUT} (.md, .html, .tex and one .csv per table)")
 
 
 def main():

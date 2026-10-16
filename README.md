@@ -1,123 +1,202 @@
 # Motor Imagery EEG Paper Implementation
 
-This repository implements methods from the cited research paper. The paper is the original research; this codebase is an implementation and reproduction effort, not a new research paper.
+This repository reimplements and reproduces the methods of:
 
-## Goal
+> Zhang, S., Zhu, Z., Zhang, B., Feng, B., Yu, T., & Li, Z. (2020). _The CSP-Based New Features Plus Non-Convex Log Sparse Feature Selection for Motor Imagery EEG Classification_. Sensors, 20(17), 4749. [https://doi.org/10.3390/s20174749](https://doi.org/10.3390/s20174749)
 
-The paper studies methods for classifying motor imagery from EEG. It aims to improve CSP-based feature extraction, efficiently select informative features, and maintain high classification accuracy.
+The paper is the original research; this codebase is an independent implementation in Python (NumPy, SciPy, scikit-learn, PyWavelets, MNE). All numbers in this README are outputs of this code, not values copied from the paper, unless marked "paper".
 
-## Proposed approach
+## What the paper proposes
 
-The paper introduces three CSP-based feature extraction methods:
+Three feature extractors that apply CSP **first** and then analyse the 6 CSP-filtered signals:
 
-1. **CSP-Wavelet:** apply a discrete wavelet transform to CSP-filtered signals and calculate statistics from the wavelet coefficients.
-2. **CSP-WPD:** apply wavelet packet decomposition to CSP-filtered signals and calculate statistics from the resulting coefficients.
-3. **CSP-FB:** apply a filter bank to CSP-filtered signals and extract log-variance features from the sub-bands.
+1. **CSP-Wavelet:** db4 discrete wavelet transform; energy and standard deviation of the coefficients in the motor-imagery sub-bands.
+2. **CSP-WPD:** the same statistics from db4 wavelet packet decomposition.
+3. **CSP-FB:** a bank of 10 band-pass filters (8–30 Hz, 4 Hz wide, 2 Hz step); log-variance per band.
 
-The extracted features are selected using a sparse optimization method with non-convex log regularization (LOG). Ensemble learning then performs a second-stage feature selection and classification.
+Features are selected in two stages:
+
+- **Primary selection:** sparse regression with a non-convex log penalty (**LOG**), or **LASSO** for comparison.
+- **Secondary selection:** a threshold ensemble. One FLDA model is trained for each weight threshold |w| > 0, 0.1, …, 0.8, and the best of the nine is reported.
+
+## Methods implemented
 
 | Method | Outline |
 | ------ | ------- |
-| **CSP** | Apply CSP to band-pass filtered EEG and classify the log-variance features with FLDA. |
-| **Wavelet-CSP** | Decompose each EEG channel using db4 DWT, reconstruct motor-imagery sub-bands as channels, then extract CSP features. |
-| **WPD-CSP** | Use db4 wavelet packet decomposition to reconstruct motor-imagery sub-bands as channels, then extract CSP features. |
-| **SFBCSP** | Extract CSP features from overlapping frequency sub-bands and select features with LASSO. |
-| **SBLFB** | Extract CSP features from overlapping frequency sub-bands and select features with sparse Bayesian learning. |
-| **CSP-Wavelet+LOG** | Extract wavelet statistics from CSP-filtered signals, select features with non-convex log regularization (LOG), then use ensemble FLDA. |
-| **CSP-WPD+LOG** | Extract wavelet-packet statistics from CSP-filtered signals, select features with LOG, then use ensemble FLDA. |
-| **CSP-FB+LOG** | Extract filter-bank features from CSP-filtered signals, select features with LOG, then use ensemble FLDA. |
-| **CSP-Wavelet+LASSO** | Same CSP-Wavelet feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. |
-| **CSP-WPD+LASSO** | Same CSP-WPD feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. |
-| **CSP-FB+LASSO** | Same CSP-FB feature pipeline, using LASSO for the first feature-selection stage before ensemble FLDA. |
+| **CSP** | CSP on 8–30 Hz EEG, normalised log-variance features, FLDA. |
+| **Wavelet-CSP** | db4 DWT of each EEG channel, motor-imagery sub-bands rebuilt as channels, then CSP + FLDA. |
+| **WPD-CSP** | The same with db4 wavelet packets. |
+| **SFBCSP** | 17 overlapping 4 Hz bands (4–40 Hz) on unfiltered EEG, CSP per band, LASSO selection, FLDA. |
+| **SBLFB** | The same features, sparse Bayesian learning selection, FLDA. |
+| **CSP-Wavelet / CSP-WPD / CSP-FB + LOG** | Proposed features, LOG selection, threshold ensemble of FLDA models. |
+| **CSP-Wavelet / CSP-WPD / CSP-FB + LASSO** | Proposed features, LASSO selection, threshold ensemble of FLDA models. |
 
-All methods are run through the unified `src/results_generation/generate_results.py` script. It reports per-subject classification accuracy and dataset-level mean and standard deviation. Use `--method` to select a single method or leave it as `all` to run every method.
+## Repository layout
 
-## Implementation details
+```text
+Data/dataset_1 … dataset_4     raw recordings (see Datasets)
+preprocessed_data/dataset_N    filtered, epoched trials (.npz)
+src/preprocessing/             one preprocessing script per dataset
+src/data/data_loader.py        loads preprocessed trials for every dataset
+src/features/                  CSP, CSP-Wavelet, CSP-WPD, CSP-FB and baseline feature extractors
+src/feature_selection/         LASSO, LOG, SBL, and F-score / GA / BPSO (Table 8)
+src/classifiers/               threshold ensemble (FLDA, or SVM / BLDA for Table 9), BLDA
+src/results_generation/        result generator, summary table + chart, Tables 6–9
+src/visualize_eeg.py           inspection, segmentation and trial-timing plots
+results/                       per-method accuracies, summaries, ablation tables
+plots/                         EEG plots and the summary chart
+```
 
-### Source folders
+## Pipeline
 
-- `src/preprocessing/`: the four dataset preprocessing scripts, using a shared documentation format.
-- `src/features/`: CSP, wavelet, wavelet-packet, and filter-bank feature pipelines.
-- `src/feature_selection/`: LASSO, LOG, and sparse Bayesian selectors.
-- `src/classifiers/`: FLDA ensemble implementation.
-- `src/data/`: loading utilities for preprocessed trials.
-- `src/results_generation/`: the unified result generator and shared pipeline helper.
-- `src/visualize_eeg.py`: raw and preprocessed EEG plotting for all four datasets.
+```text
+raw files ─► preprocess_datasetN.py ─► preprocessed_data/*.npz
+                                          │  data_loader.iter_dataset_trials()
+                                          ▼
+              result_runner.evaluate(method, trials)
+              ├─ features/           CSP, CSP-Wavelet, CSP-WPD, CSP-FB, baselines
+              ├─ feature_selection/  LASSO, LOG, SBL
+              └─ classifiers/        threshold ensemble + FLDA
+                                          ▼
+              results/<method>/dataset_N/accuracies.csv
+              ─► summary_table.py    summary table + Fig. 7-style chart
+              ─► ablation_tables.py  Tables 6–9
+```
 
-### Preprocessing
+### Preprocessing (paper Sections 2.1, 2.3)
 
-Run the matching preprocessing script before generating classifier results:
+Every script applies a sixth-order Butterworth 8–30 Hz band-pass with `sosfiltfilt` (zero phase) to the continuous recording and cuts epochs relative to the **cue**.
+
+| Dataset | Recording | Train / test | Window after cue |
+| ------- | --------- | ------------ | ---------------- |
+| 1 · BCI IV-1 | 100 Hz, 59 channels | Calibration file: first 100 / last 100 trials | 0.5–3.5 s |
+| 2 · BCI IV-2a | 250 Hz, 22 channels | Session T / session E; 6 binary class pairs per subject | 0.5–2.5 s |
+| 3 · BCI IV-2b | 250 Hz, 3 channels | Session 03T only; first 80 / last 80 trials | 0.5–2.5 s |
+| 4 · Steyrl 2016 | 512 → 256 Hz, 15 channels | Runs 1–5 (100) / runs 6–8 (60) | 0.5–2.5 s |
+
+Dataset 4's markers are trial starts, and the cue follows 3 s later (`CUE_OFFSET` in `preprocess_dataset4.py`). Each `.npz` stores the filtered epochs (`X_train`, `X_test`), the unfiltered epochs of the same windows (`X_train_raw`, `X_test_raw`, used by SFBCSP and SBLFB), labels, sampling rate and channel names.
 
 ```powershell
 python src/preprocessing/preprocess_dataset1.py
 python src/preprocessing/preprocess_dataset2.py
-python src/preprocessing/preprocess_dataset3.py
+python src/preprocessing/preprocess_dataset3.py --sessions 3
 python src/preprocessing/preprocess_dataset4.py
 ```
 
-The scripts read data from `Data/dataset_1` through `Data/dataset_4` and save compressed trial arrays under `preprocessed_data/dataset_1` through `preprocessed_data/dataset_4`. Each saved file contains train/test epochs, labels, sampling rate, and channel metadata. The common filter is a sixth-order 8–30 Hz Butterworth band-pass; epochs are cut from 0.5 to 2.5 seconds, except Dataset 1, which uses 0.5 to 3.5 seconds.
+### Features (Section 2.4)
 
-| Dataset | Data used by preprocessing |
-| ------- | -------------------------- |
-| `Data/dataset_1` | BCI Competition IV Dataset I calibration recordings; 100 train and 100 test trials per subject. |
-| `Data/dataset_2` | BCI Competition IV Dataset IIa, 22 EEG channels; full four-class files and six two-class pairs per subject. Test labels are read from `true_labels` when available. |
-| `Data/dataset_3` | BCI Competition IV Dataset IIb; the third training session has 160 trials per subject, split into 80 train and 80 test trials. |
-| `Data/dataset_4` | Steyrl dataset; recordings are resampled from 512 Hz to 256 Hz when necessary, with 100 train and 60 test trials per subject. |
+- **CSP** (`csp_features.py`, Eqs. 1–5): trace-normalised class covariances; the generalised eigenproblem is solved as `eigh(C1, C1 + C2)`, which gives the same filters as C₂⁻¹C₁; m = 3 filter pairs.
+- **Sub-band choice for CSP-Wavelet and CSP-WPD** (`mostly_inside()` in `csp_wavelet.py`): a sub-band is kept when more than half of it lies inside 8–30 Hz. This reproduces the sub-bands marked in the paper's Figures 3 and 4:
 
-### Classifier pipeline
+  | | 100 Hz (3 levels) | 250 / 256 Hz (4 levels) |
+  | --- | --- | --- |
+  | DWT | D3, D2 (6.25–25 Hz) | D4, D3 (7.8–31.25 Hz) |
+  | WPD | S(3,1)–S(3,4) (6.25–31.25 Hz) | S(4,1)–S(4,3) (7.8–31.25 Hz) |
 
-- CSP learns three spatial-filter pairs from the training data and uses normalized log-variance features with FLDA.
-- Wavelet-CSP and WPD-CSP reconstruct motor-imagery sub-band signals with db4 DWT or WPD before CSP. The decomposition level is 3 for Dataset 1 and 4 for the other datasets.
-- SFBCSP and SBLFB calculate CSP features on 17 overlapping 4 Hz bands spanning 4–40 Hz. They select features using LASSO and sparse Bayesian learning, respectively.
-- CSP-Wavelet, CSP-WPD, and CSP-FB extract wavelet, packet, or filter-bank features from CSP-projected signals. Their LOG and LASSO variants apply feature selection followed by an FLDA threshold ensemble.
-- The LOG and LASSO selectors use stratified 10-fold cross-validation to choose a regularization parameter. The FLDA ensemble evaluates coefficient thresholds from 0.0 to 0.8 in increments of 0.1.
+- **CSP-FB** (`csp_fb.py`): 10 bands, 6 CSP signals, 60 log-variance features.
 
-### Generating results
+### Feature selection and classification (Sections 2.5, 2.6)
 
-Run all methods on all four datasets:
+- **LASSO** (`lasso_selection.py`): scikit-learn `Lasso` with `alpha = λ / n`, so the objective equals the paper's ½‖y − Xw‖² + λ‖w‖₁.
+- **LOG** (`log_selection.py`): iterative log-thresholding (Eq. 17), a = 0.001.
+- **λ for both:** 10-fold cross-validation over the paper's grid 2⁻⁵, 2⁻⁴·⁸, …, 2⁵.
+- **Threshold ensemble** (`ensemble_flda.py`): one model per threshold 0, 0.1, …, 0.8; the reported score is the best test accuracy of the nine, as in the paper. The classifier can be swapped (`make_model`) for the Table 9 comparison.
+
+## Running
 
 ```powershell
+# accuracy per subject for every method and dataset
 python src/results_generation/generate_results.py
+python src/results_generation/generate_results.py --method "CSP-FB+LOG" --dataset dataset_4
+python src/results_generation/generate_results.py --subject-limit 2      # quick trial run
+
+# summary table (mean ± std) and Fig. 7-style bar chart
+python src/results_generation/summary_table.py
+
+# paper Tables 6–9 (about 1 hour on 7 cores; cached and resumable)
+python src/results_generation/ablation_tables.py
+python src/results_generation/ablation_tables.py --tables-only           # rebuild from cache
+
+# EEG plots: raw vs filtered, segmentation, trial timing
+python src/visualize_eeg.py --dataset all
 ```
 
-This writes each method's subject-level accuracy and mean/std files under `results/<method>/dataset_1` through `dataset_4`, plus `results/all_methods_summary.csv`. The method-specific folders are ignored by Git; the combined summary stays trackable. Run all methods on Dataset IIa with `python src/results_generation/generate_results.py --dataset dataset_2`. Run only CSP on all datasets with `python src/results_generation/generate_results.py --method CSP`:
+`generate_results.py` runs the datasets listed in `DATASET_KEYS` in `result_runner.py`. It writes `results/<method>/dataset_N/accuracies.csv` and `summary.csv`, and updates only the rows it ran in `results/all_methods_summary.csv`.
 
-```powershell
-python src/results_generation/generate_results.py --method "CSP-Wavelet+LOG" --dataset dataset_2
-```
+| Output | Contents |
+| ------ | -------- |
+| `results/summary_table.md`, `.csv` | Mean ± std accuracy per method and dataset, plus "All data" |
+| `plots/summary_accuracy.png` | Grouped bar chart in the style of the paper's Figure 7 |
+| `results/ablation/ablation_tables.html`, `.tex`, `.md`, `table6…9.csv` | Paper Tables 6–9 in the paper's layout (the `.tex` needs `booktabs` and `multirow`) |
+| `plots/dataset_N/trial_timing_*.png` | One trial per dataset with trial start, cue and epoch window marked |
 
-For each selected method, the generator writes per-subject accuracies to `results/<method>/dataset_N/accuracies.csv` and mean/std summaries to `summary.csv`. Dataset IIa produces one row per subject and binary class pair. A short run can be limited with `--subject-limit N`.
+"All data" pools all 84 units (7 + 54 + 9 + 14), as the paper does, and std is the population std; both reproduce the paper's own numbers.
 
-Generate EEG inspection plots with `python src/visualize_eeg.py --dataset all`. Select a single folder with `--dataset dataset_1`, `dataset_2`, `dataset_3`, or `dataset_4`.
+## Results
 
-## Results currently in the repository
+Mean ± std classification accuracy (%), from `results/summary_table.md`:
 
-Existing CSP results cover all four datasets. Accuracy is shown as mean ± standard deviation in percent across subjects (Dataset 2a counts each subject-pair result as one row).
+| Method | Dataset 1 | Dataset 2 | Dataset 3 | Dataset 4 | All data |
+| --- | --- | --- | --- | --- | --- |
+| CSP | 84.00 ± 11.69 | 81.58 ± 13.19 | 79.31 ± 16.01 | 77.14 ± 13.38 | 80.80 ± 13.57 |
+| Wavelet-CSP | 80.57 ± 14.78 | 81.47 ± 13.67 | 77.22 ± 16.20 | 77.14 ± 12.65 | 80.22 ± 14.02 |
+| WPD-CSP | 83.00 ± 10.34 | 81.25 ± 13.33 | 76.53 ± 17.24 | 78.57 ± 12.71 | 80.44 ± 13.60 |
+| SFBCSP | 77.00 ± 16.56 | 78.34 ± 13.39 | 69.31 ± 26.98 | 65.71 ± 12.77 | 75.16 ± 16.39 |
+| SBLFB | 73.43 ± 11.93 | 76.48 ± 13.44 | 72.22 ± 15.07 | 65.12 ± 12.64 | 73.88 ± 14.01 |
+| CSP-Wavelet+LOG | 86.43 ± 10.43 | 82.86 ± 12.33 | 77.22 ± 15.75 | 80.83 ± 12.83 | 82.21 ± 12.87 |
+| CSP-WPD+LOG | 84.71 ± 11.95 | 82.93 ± 12.67 | 77.22 ± 14.78 | 78.45 ± 14.55 | 81.72 ± 13.40 |
+| CSP-FB+LOG | 85.86 ± 12.76 | 83.24 ± 12.94 | 79.03 ± 15.17 | 82.02 ± 11.04 | 82.81 ± 12.99 |
 
-| Dataset | Result rows | CSP accuracy (%) |
-| ------- | ----------: | ---------------: |
-| 1 | 7 | 84.00 ± 11.69 |
-| 2a | 54 | 81.58 ± 13.19 |
-| 2b | 9 | 79.31 ± 16.01 |
-| 4 | 14 | 51.43 ± 4.83 |
+Compared with the paper (All data: CSP 79.58, CSP-Wavelet+LOG 82.25, CSP-WPD+LOG 82.38, CSP-FB+LOG 82.3), the proposed methods reproduce closely and keep their advantage over CSP. SFBCSP and SBLFB stay below the paper on Datasets 3 and 4. In Tables 6–9 the paper's orderings hold: the secondary selection adds 2–4 points, LOG ≥ LASSO > F-score > GA/BPSO, and FLDA, SVM and BLDA are within 0.5 points of each other.
 
-An earlier combined-runner snapshot for Dataset 1 is also stored at `results/paper_reproduction/dataset_1/paper_table.csv`. The LASSO variants do not have saved results yet; generate them with `--method "CSP-Wavelet+LASSO"` and the corresponding method name. These numbers are project outputs, not values copied from the paper.
+### Evaluation caveats
 
-**Evaluation caveat:** the current LOG/LASSO ensemble score is the best accuracy among the threshold models evaluated on the test labels. This uses the test set to choose the threshold and can make those ensemble results optimistic. Use a validation split to select the threshold before treating them as unbiased test accuracy.
+- **Test-set selection.** The threshold ensemble reports the best of nine models on the test set, as the paper does. This favours the ensemble methods over the single-model baselines. Without it (Table 7, "without secondary selection"), CSP-FB+LOG scores 78.64 against CSP's 80.80.
+- **"All data" weighting.** Dataset 2 contributes 54 of the 84 units, but these come from only 9 subjects, each counted 6 times. Report per-dataset results alongside it, and use a paired test across subjects when claiming one method beats another.
 
-## Evaluation
+## Implementation assumptions
 
-The proposed methods are evaluated on four public motor imagery EEG datasets. The experiments compare classification accuracy and feature extraction time against other methods. The paper reports CSP-FB + LOG as a strong option when considering both accuracy and computation time.
+The paper leaves the following details open. They are listed so the results can be interpreted and reproduced.
+
+### Most likely to affect results
+
+1. **Feature standardisation before LASSO/LOG.** Features are standardised (`StandardScaler`) before selection. The secondary thresholds 0.1–0.8 act on the resulting weights, so scaling changes which features pass them.
+2. **GA and BPSO settings** (Table 8). 10 agents, 100 iterations, KNN (k = 5) on a 20% hold-out, fitness 0.99·error + 0.01·(selected ÷ total); GA: roulette selection, one-point crossover 0.8, mutation 0.01, elitist replacement; BPSO: c1 = c2 = 2, inertia 0.9 → 0.4, velocity limit 6, sigmoid transfer. These follow the paper's reference [67] from memory and have not been checked against it; they are the likeliest cause of GA/BPSO scoring 1–3 points below the paper.
+3. **SBL pruning cutoff.** SBLFB drops features whose estimated precision is ≥ 10⁵, chosen from the observed gap between kept (≈10²) and pruned (≈10⁷·⁵) features. With the earlier cutoff of 10⁸, nothing was pruned and Dataset 1 accuracy was 52.9% instead of 73.4%.
+4. **λ selection criterion.** Cross-validation uses the mean squared error of the regression on each validation fold (stratified, shuffled, seed 42). Classification accuracy would be the other natural choice and can pick a different λ.
+
+### Other choices
+
+| Area | Choice |
+| ---- | ------ |
+| Dataset 4 cue | Trial marker + 3 s, from the dataset's paradigm description; confirmed by accuracy rising from chance (51%) to 77% |
+| Dataset 4 downsampling | Zero-phase FIR anti-aliasing decimation, 512 → 256 Hz |
+| Dataset 2 evaluation cues | Event 783, falling back to trial start + 2 s |
+| Dataset 3 artifact trials | Kept and flagged, not removed |
+| Sub-band rule | More than half of the band inside 8–30 Hz (reproduces Figs. 3–4) |
+| Wavelet edges | PyWavelets `mode="symmetric"` |
+| Wavelet-CSP / WPD-CSP | Each kept sub-band becomes its own channel before CSP |
+| SFBCSP / SBLFB | Filter order 6, 3 CSP pairs per band, one FLDA without the threshold ensemble |
+| LASSO solver | scikit-learn coordinate descent instead of the SLEP toolbox |
+| LOG solver | Starts from w = 0; at most 5,000 iterations; tolerance 1e-7 |
+| "Without secondary selection" | FLDA on all features with \|w\| > 0 (the ensemble's threshold-0 model) |
+| F-score | Fisher score on standardised features; subset size from 1 to all, chosen by 10-fold FLDA cross-validation |
+| BLDA | scikit-learn `BayesianRidge` on ±1 labels, default priors, classified by sign |
+| SVM | scikit-learn `SVC(kernel="linear", C=1)`, LIBSVM's default C |
+| Seeds | 42 for cross-validation folds and the GA/BPSO searches |
+
+## Differences from the paper still open
+
+- **SFBCSP / SBLFB filtering.** The 17-band filters run on 2 s epochs that are already cut, so filter start-up effects corrupt part of each epoch. An experiment with 2 s of padding on both sides raised SFBCSP overall from 75.2% to 77.0% (Dataset 3 +6.8, Dataset 4 +3.8; Wilcoxon p = 0.055) and SBLFB from 73.9% to 74.9% (p = 0.11), and changed CSP-FB by less than 0.5 points. It is not adopted.
+- **Reconstructed methods.** SBL, GA, BPSO and BLDA are written from the cited references, not the authors' code.
 
 ## Datasets
 
-| Dataset                        | Description in the paper                                                                                                                                                                                                     |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BCI Competition IV Dataset I   | 59 channels at 100 Hz; 7 subjects imagine two of three movements (left hand, right hand, or right foot). The paper uses two runs of 100 trials each, with one run for training and the other for testing.                    |
-| BCI Competition IV Dataset IIa | 22 channels at 250 Hz; 9 subjects imagine left hand, right hand, foot, or tongue movement. The two sessions are used for training and testing, and the four classes form six binary task pairs (54 subject/task sets total). |
-| BCI Competition IV Dataset IIb | 3 channels at 250 Hz; 9 subjects perform left-hand or right-hand motor imagery. The paper uses the third training session, with 160 trials split evenly between training and testing.                                        |
-| David Steyrl dataset (2016)    | 15 channels recorded at 512 Hz and downsampled to 256 Hz; 14 subjects imagine right-hand or foot movement. Runs 1–5 provide 100 training trials, and runs 6–8 provide 60 test trials per subject.                            |
+| Dataset | Description in the paper |
+| ------- | ------------------------ |
+| BCI Competition IV Dataset I | 59 channels at 100 Hz; 7 subjects imagine two of left hand, right hand or right foot. Two runs of 100 trials: one for training, one for testing. |
+| BCI Competition IV Dataset IIa | 22 channels at 250 Hz; 9 subjects imagine left hand, right hand, foot or tongue. Session T trains, session E tests; the four classes form six binary pairs (54 subject-pair sets). |
+| BCI Competition IV Dataset IIb | 3 channels at 250 Hz; 9 subjects imagine left or right hand. The third training session's 160 trials are split evenly into training and test. |
+| Steyrl dataset (2016) | 15 channels at 512 Hz, downsampled to 256 Hz; 14 subjects imagine right hand or feet. Runs 1–5 give 100 training trials, runs 6–8 give 60 test trials. |
 
-## Reference
-
-Zhang, S., Zhu, Z., Zhang, B., Feng, B., Yu, T., & Li, Z. (2020). _The CSP-Based New Features Plus Non-Convex Log Sparse Feature Selection for Motor Imagery EEG Classification_. Sensors, 20(17), 4749. [https://doi.org/10.3390/s20174749](https://doi.org/10.3390/s20174749)
+Sources: [BCI Competition IV](http://www.bbci.de/competition/IV/), [BNCI Horizon 2020](http://bnci-horizon-2020.eu/database/data-sets).

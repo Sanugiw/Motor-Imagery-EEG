@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ablation tables</title>
+<style>
+  body { font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif; color: #111;
+         background: #fff; margin: 0; padding: 32px 16px; }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 40px; }
+  p.note { margin: 0; color: #444; font-size: 0.9rem; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; padding-bottom: 10px; font-size: 0.95rem; }
+  thead { border-top: 1.5px solid #111; border-bottom: 1px solid #111; }
+  tbody { border-bottom: 1.5px solid #111; }
+  th, td { padding: 6px 10px; text-align: center; white-space: nowrap; }
+  th { font-weight: 700; }
+  th.group { border-bottom: 1px solid #111; }
+  tbody tr + tr td { border-top: 1px solid #c8c8c8; }
+  td.block { border-right: 0; vertical-align: middle; }
+</style></head>
+<body><main>
+<p class="note">Average classification accuracy (%). "All data" pools every subject and Dataset 2 class pair, as in the paper's Tables 6-9.</p>
+<div class="wrap"><table>
+<caption><b>Table 6.</b> The effect of secondary feature selection on average classification accuracy of various datasets (the LASSO method).</caption>
+<thead>
+<tr><th rowspan="2" class="stub">Datasets</th><th colspan="3" class="group">Without Secondary Feature Selection</th><th colspan="3" class="group">With Secondary Feature Selection</th></tr>
+<tr><th>CSP-Wavelet+LASSO</th><th>CSP-WPD+LASSO</th><th>CSP-FB+LASSO</th><th>CSP-Wavelet+LASSO</th><th>CSP-WPD+LASSO</th><th>CSP-FB+LASSO</th></tr>
+</thead>
+<tbody>
+<tr><td>dataset 1</td><td>81.14</td><td>81.43</td><td>81.29</td><td>84.14</td><td>83.14</td><td>86.14</td></tr>
+<tr><td>dataset 2</td><td>80.12</td><td>80.65</td><td>81.04</td><td>82.48</td><td>83.04</td><td>83.73</td></tr>
+<tr><td>dataset 3</td><td>76.67</td><td>75.14</td><td>72.22</td><td>77.22</td><td>76.53</td><td>74.86</td></tr>
+<tr><td>dataset 4</td><td>76.55</td><td>74.05</td><td>76.90</td><td>79.88</td><td>78.45</td><td>80.71</td></tr>
+<tr><td>All data</td><td>79.24</td><td>79.02</td><td>79.43</td><td>81.62</td><td>81.58</td><td>82.48</td></tr>
+</tbody>
+</table></div>
+<div class="wrap"><table>
+<caption><b>Table 7.</b> The effect of secondary feature selection on average classification accuracy of various datasets (the LOG method).</caption>
+<thead>
+<tr><th rowspan="2" class="stub">Datasets</th><th colspan="3" class="group">Without Secondary Feature Selection</th><th colspan="3" class="group">With Secondary Feature Selection</th></tr>
+<tr><th>CSP-Wavelet+LOG</th><th>CSP-WPD+LOG</th><th>CSP-FB+LOG</th><th>CSP-Wavelet+LOG</th><th>CSP-WPD+LOG</th><th>CSP-FB+LOG</th></tr>
+</thead>
+<tbody>
+<tr><td>dataset 1</td><td>84.00</td><td>83.00</td><td>81.00</td><td>86.43</td><td>84.71</td><td>85.86</td></tr>
+<tr><td>dataset 2</td><td>80.45</td><td>80.65</td><td>79.41</td><td>82.86</td><td>82.93</td><td>83.24</td></tr>
+<tr><td>dataset 3</td><td>76.11</td><td>76.94</td><td>75.97</td><td>77.22</td><td>77.22</td><td>79.03</td></tr>
+<tr><td>dataset 4</td><td>77.86</td><td>75.60</td><td>76.19</td><td>80.83</td><td>78.45</td><td>82.02</td></tr>
+<tr><td>All data</td><td>79.85</td><td>79.60</td><td>78.64</td><td>82.21</td><td>81.72</td><td>82.81</td></tr>
+</tbody>
+</table></div>
+<div class="wrap"><table>
+<caption><b>Table 8.</b> The effect of different feature selection methods on average classification accuracy of various datasets.</caption>
+<thead>
+<tr><th class="stub">Feature Extraction</th><th class="stub">Feature Selection</th><th>Dataset 1</th><th>Dataset 2</th><th>Dataset 3</th><th>Dataset 4</th><th>All Data</th></tr>
+</thead>
+<tbody>
+<tr><td rowspan="5" class="block">CSP-Wavelet</td><td>F-score</td><td>81.43</td><td>80.09</td><td>73.61</td><td>77.50</td><td>79.08</td></tr>
+<tr><td>GA</td><td>72.43</td><td>78.31</td><td>72.22</td><td>75.95</td><td>76.77</td></tr>
+<tr><td>BPSO</td><td>77.57</td><td>77.53</td><td>74.44</td><td>76.07</td><td>76.96</td></tr>
+<tr><td>LASSO</td><td>84.14</td><td>82.48</td><td>77.22</td><td>79.88</td><td>81.62</td></tr>
+<tr><td>LOG</td><td>86.43</td><td>82.86</td><td>77.22</td><td>80.83</td><td>82.21</td></tr>
+<tr><td rowspan="5" class="block">CSP-WPD</td><td>F-score</td><td>82.57</td><td>79.48</td><td>74.72</td><td>76.55</td><td>78.74</td></tr>
+<tr><td>GA</td><td>73.71</td><td>78.15</td><td>75.28</td><td>74.29</td><td>76.83</td></tr>
+<tr><td>BPSO</td><td>77.43</td><td>78.97</td><td>74.72</td><td>72.62</td><td>77.33</td></tr>
+<tr><td>LASSO</td><td>83.14</td><td>83.04</td><td>76.53</td><td>78.45</td><td>81.58</td></tr>
+<tr><td>LOG</td><td>84.71</td><td>82.93</td><td>77.22</td><td>78.45</td><td>81.72</td></tr>
+<tr><td rowspan="5" class="block">CSP-FB</td><td>F-score</td><td>83.29</td><td>81.30</td><td>79.03</td><td>76.79</td><td>80.47</td></tr>
+<tr><td>GA</td><td>76.43</td><td>78.97</td><td>74.58</td><td>77.26</td><td>78.01</td></tr>
+<tr><td>BPSO</td><td>79.29</td><td>80.63</td><td>73.61</td><td>77.14</td><td>79.19</td></tr>
+<tr><td>LASSO</td><td>86.14</td><td>83.73</td><td>74.86</td><td>80.71</td><td>82.48</td></tr>
+<tr><td>LOG</td><td>85.86</td><td>83.24</td><td>79.03</td><td>82.02</td><td>82.81</td></tr>
+</tbody>
+</table></div>
+<div class="wrap"><table>
+<caption><b>Table 9.</b> The effect of different classifiers on average classification accuracy of various datasets.</caption>
+<thead>
+<tr><th rowspan="2" class="stub">Datasets</th><th colspan="3" class="group">CSP-Wavelet+LOG</th><th colspan="3" class="group">CSP-WPD+LOG</th><th colspan="3" class="group">CSP-FB+LOG</th></tr>
+<tr><th>SVM</th><th>BLDA</th><th>FLDA</th><th>SVM</th><th>BLDA</th><th>FLDA</th><th>SVM</th><th>BLDA</th><th>FLDA</th></tr>
+</thead>
+<tbody>
+<tr><td>dataset 1</td><td>85.43</td><td>85.86</td><td>86.43</td><td>83.86</td><td>83.86</td><td>84.71</td><td>87.14</td><td>86.29</td><td>85.86</td></tr>
+<tr><td>dataset 2</td><td>82.63</td><td>83.01</td><td>82.86</td><td>82.69</td><td>83.09</td><td>82.93</td><td>83.06</td><td>83.81</td><td>83.24</td></tr>
+<tr><td>dataset 3</td><td>78.19</td><td>78.47</td><td>77.22</td><td>78.19</td><td>77.36</td><td>77.22</td><td>78.75</td><td>79.86</td><td>79.03</td></tr>
+<tr><td>dataset 4</td><td>80.95</td><td>80.95</td><td>80.83</td><td>79.52</td><td>79.52</td><td>78.45</td><td>83.33</td><td>81.19</td><td>82.02</td></tr>
+<tr><td>All data</td><td>82.11</td><td>82.42</td><td>82.21</td><td>81.78</td><td>81.95</td><td>81.72</td><td>82.99</td><td>83.16</td><td>82.81</td></tr>
+</tbody>
+</table></div>
+</main></body></html>

@@ -1,0 +1,94 @@
+% Requires \usepackage{booktabs} and \usepackage{multirow}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The effect of secondary feature selection on average classification accuracy of various datasets (the LASSO method).}
+\label{tab:table6_lasso_secondary}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{\textbf{Without Secondary Feature Selection}} & \multicolumn{3}{c}{\textbf{With Secondary Feature Selection}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Datasets} & \textbf{CSP-Wavelet+LASSO} & \textbf{CSP-WPD+LASSO} & \textbf{CSP-FB+LASSO} & \textbf{CSP-Wavelet+LASSO} & \textbf{CSP-WPD+LASSO} & \textbf{CSP-FB+LASSO} \\
+\midrule
+dataset 1 & 81.14 & 81.43 & 81.29 & 84.14 & 83.14 & 86.14 \\
+dataset 2 & 80.12 & 80.65 & 81.04 & 82.48 & 83.04 & 83.73 \\
+dataset 3 & 76.67 & 75.14 & 72.22 & 77.22 & 76.53 & 74.86 \\
+dataset 4 & 76.55 & 74.05 & 76.90 & 79.88 & 78.45 & 80.71 \\
+\midrule
+All data & 79.24 & 79.02 & 79.43 & 81.62 & 81.58 & 82.48 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The effect of secondary feature selection on average classification accuracy of various datasets (the LOG method).}
+\label{tab:table7_log_secondary}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{\textbf{Without Secondary Feature Selection}} & \multicolumn{3}{c}{\textbf{With Secondary Feature Selection}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Datasets} & \textbf{CSP-Wavelet+LOG} & \textbf{CSP-WPD+LOG} & \textbf{CSP-FB+LOG} & \textbf{CSP-Wavelet+LOG} & \textbf{CSP-WPD+LOG} & \textbf{CSP-FB+LOG} \\
+\midrule
+dataset 1 & 84.00 & 83.00 & 81.00 & 86.43 & 84.71 & 85.86 \\
+dataset 2 & 80.45 & 80.65 & 79.41 & 82.86 & 82.93 & 83.24 \\
+dataset 3 & 76.11 & 76.94 & 75.97 & 77.22 & 77.22 & 79.03 \\
+dataset 4 & 77.86 & 75.60 & 76.19 & 80.83 & 78.45 & 82.02 \\
+\midrule
+All data & 79.85 & 79.60 & 78.64 & 82.21 & 81.72 & 82.81 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The effect of different feature selection methods on average classification accuracy of various datasets.}
+\label{tab:table8_feature_selection}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Feature Extraction} & \textbf{Feature Selection} & \textbf{Dataset 1} & \textbf{Dataset 2} & \textbf{Dataset 3} & \textbf{Dataset 4} & \textbf{All Data} \\
+\midrule
+\multirow{5}{*}{CSP-Wavelet} & F-score & 81.43 & 80.09 & 73.61 & 77.50 & 79.08 \\
+ & GA & 72.43 & 78.31 & 72.22 & 75.95 & 76.77 \\
+ & BPSO & 77.57 & 77.53 & 74.44 & 76.07 & 76.96 \\
+ & LASSO & 84.14 & 82.48 & 77.22 & 79.88 & 81.62 \\
+ & LOG & 86.43 & 82.86 & 77.22 & 80.83 & 82.21 \\
+\midrule
+\multirow{5}{*}{CSP-WPD} & F-score & 82.57 & 79.48 & 74.72 & 76.55 & 78.74 \\
+ & GA & 73.71 & 78.15 & 75.28 & 74.29 & 76.83 \\
+ & BPSO & 77.43 & 78.97 & 74.72 & 72.62 & 77.33 \\
+ & LASSO & 83.14 & 83.04 & 76.53 & 78.45 & 81.58 \\
+ & LOG & 84.71 & 82.93 & 77.22 & 78.45 & 81.72 \\
+\midrule
+\multirow{5}{*}{CSP-FB} & F-score & 83.29 & 81.30 & 79.03 & 76.79 & 80.47 \\
+ & GA & 76.43 & 78.97 & 74.58 & 77.26 & 78.01 \\
+ & BPSO & 79.29 & 80.63 & 73.61 & 77.14 & 79.19 \\
+ & LASSO & 86.14 & 83.73 & 74.86 & 80.71 & 82.48 \\
+ & LOG & 85.86 & 83.24 & 79.03 & 82.02 & 82.81 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{The effect of different classifiers on average classification accuracy of various datasets.}
+\label{tab:table9_classifiers}
+\begin{tabular}{lccccccccc}
+\toprule
+ & \multicolumn{3}{c}{\textbf{CSP-Wavelet+LOG}} & \multicolumn{3}{c}{\textbf{CSP-WPD+LOG}} & \multicolumn{3}{c}{\textbf{CSP-FB+LOG}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+\textbf{Datasets} & \textbf{SVM} & \textbf{BLDA} & \textbf{FLDA} & \textbf{SVM} & \textbf{BLDA} & \textbf{FLDA} & \textbf{SVM} & \textbf{BLDA} & \textbf{FLDA} \\
+\midrule
+dataset 1 & 85.43 & 85.86 & 86.43 & 83.86 & 83.86 & 84.71 & 87.14 & 86.29 & 85.86 \\
+dataset 2 & 82.63 & 83.01 & 82.86 & 82.69 & 83.09 & 82.93 & 83.06 & 83.81 & 83.24 \\
+dataset 3 & 78.19 & 78.47 & 77.22 & 78.19 & 77.36 & 77.22 & 78.75 & 79.86 & 79.03 \\
+dataset 4 & 80.95 & 80.95 & 80.83 & 79.52 & 79.52 & 78.45 & 83.33 & 81.19 & 82.02 \\
+\midrule
+All data & 82.11 & 82.42 & 82.21 & 81.78 & 81.95 & 81.72 & 82.99 & 83.16 & 82.81 \\
+\bottomrule
+\end{tabular}
+\end{table}

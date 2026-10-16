@@ -153,8 +153,9 @@ def preprocess_subject(
     end_offset = int(round(EPOCH_END * FS))
     expected_len = end_offset - start_offset
 
-    def extract_epochs(filtered_data, cues, labels):
-        epochs = []
+    def extract_epochs(filtered_data, raw_data, cues, labels):
+        """Same windows from the filtered and the unfiltered recording."""
+        epochs, raw_epochs = [], []
         valid_labels = []
         for cue, label in zip(cues, labels):
             start = cue + start_offset
@@ -163,11 +164,13 @@ def preprocess_subject(
                 epoch = filtered_data[:, start:end]
                 if epoch.shape[1] == expected_len:
                     epochs.append(epoch)
+                    raw_epochs.append(raw_data[:, start:end])
                     valid_labels.append(label)
-        return np.asarray(epochs, dtype=np.float32), np.asarray(valid_labels, dtype=np.int64)
+        return (np.asarray(epochs, dtype=np.float32), np.asarray(raw_epochs, dtype=np.float32),
+                np.asarray(valid_labels, dtype=np.int64))
 
-    X_train_full, y_train_full = extract_epochs(filtered_train, cues_train, y_train_full)
-    X_test_full, y_test_full = extract_epochs(filtered_test, cues_test, y_test_full)
+    X_train_full, X_train_raw_full, y_train_full = extract_epochs(filtered_train, eeg_train, cues_train, y_train_full)
+    X_test_full, X_test_raw_full, y_test_full = extract_epochs(filtered_test, eeg_test, cues_test, y_test_full)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     full_out_file = output_dir / f"{subject_id}_full_4class_preprocessed.npz"
@@ -177,6 +180,8 @@ def preprocess_subject(
         y_train=y_train_full,
         X_test=X_test_full,
         y_test=y_test_full,
+        X_train_raw=X_train_raw_full,
+        X_test_raw=X_test_raw_full,
         fs=FS,
         channels=np.asarray(ch_names),
         subject=subject_id,
@@ -208,6 +213,9 @@ def preprocess_subject(
             y_test=y_test_sign,
             y_test_binary=y_test_binary,
             y_test_raw=y_test,
+            # unfiltered epochs of the same windows (used by SFBCSP / SBLFB)
+            X_train_raw=X_train_raw_full[train_mask],
+            X_test_raw=X_test_raw_full[test_mask],
             fs=FS,
             channels=np.asarray(ch_names),
             subject=subject_id,
